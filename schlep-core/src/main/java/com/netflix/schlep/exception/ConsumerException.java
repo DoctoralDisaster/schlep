@@ -5,7 +5,7 @@ package com.netflix.schlep.exception;
  * @author elandau
  *
  */
-public class ConsumerException extends Exception {
+public class ConsumerException extends MessagingException {
 
     public ConsumerException(String msg, Exception e) {
         super(msg, e);

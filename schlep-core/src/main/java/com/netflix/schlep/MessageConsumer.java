@@ -1,7 +1,5 @@
 package com.netflix.schlep;
 
-import java.io.Closeable;
-
 /**
  * Return a reference to a MessageConsumer that has a registerd callback method.
  * 
@@ -13,12 +11,12 @@ public interface MessageConsumer<T> {
     /**
      * Pause the consumer so that the callback is no longer called.
      */
-    public void pause();
+    public void pause() throws Exception;
     
     /**
      * Resume a consumer that has been paused.  No-op if consume is not currently paused
      */
-    public void resume();
+    public void resume() throws Exception;
 
     /**
      * Start any consumer threads and begin consuming messages

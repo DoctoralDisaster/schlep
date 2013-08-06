@@ -43,7 +43,7 @@ public class EndpointKey<T> {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        EndpointKey other = (EndpointKey) obj;
+        EndpointKey<?> other = (EndpointKey<?>) obj;
         if (name == null) {
             if (other.name != null)
                 return false;

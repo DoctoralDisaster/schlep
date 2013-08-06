@@ -1,6 +1,5 @@
 package com.netflix.schlep.sqs;
 
-import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -85,10 +84,6 @@ public class SqsMessageProducerProvider implements MessageProducerProvider {
             else {
                 transform = new NoOpTransform();
             }
-        }
-
-        @Override
-        public void close() throws IOException {
         }
 
         @Override

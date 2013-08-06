@@ -11,7 +11,7 @@ import com.google.common.util.concurrent.ListenableFuture;
  */
 public interface IncomingMessage<T> {
     /**
-     * Return the time since the message was received
+     * Return the time since the message was received on this consumer
      * @return
      */
     public long getTimeSinceReceived(TimeUnit units);

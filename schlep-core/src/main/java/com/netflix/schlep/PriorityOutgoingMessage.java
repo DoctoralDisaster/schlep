@@ -1,12 +1,6 @@
 package com.netflix.schlep;
 
-/**
- * Encapsulate an outgoing message context
- * 
- * @author elandau
- *
- */
-public class OutgoingMessage<T> {
+public class PriorityOutgoingMessage<T> {
     /**
      * Entity to be persisted as the message body
      */
@@ -18,12 +12,28 @@ public class OutgoingMessage<T> {
     private String uniqueId;
     
     /**
+     * Priority used for ordering messages.
+     * TODO: Consider making this generic using byte[]
+     */
+    private long priority = 0;
+    
+    /**
+     * Priority value used for sorting messages
+     * @param priority
+     * @return
+     */
+    public PriorityOutgoingMessage<T> withPriority(long priority) {
+        this.priority = priority;
+        return this;
+    }
+    
+    /**
      * Assign an optional uniqueId.  If supported the messaging solution will
      * fail sending the message if uniquness constraint fails.
      * @param id
      * @return
      */
-    public OutgoingMessage<T> withUniqueId(String id) {
+    public PriorityOutgoingMessage<T> withUniqueId(String id) {
         this.uniqueId = id;
         return this;
     }
@@ -33,10 +43,11 @@ public class OutgoingMessage<T> {
      * @param message
      * @return
      */
-    public OutgoingMessage<T> withMessage(T message) {
+    public PriorityOutgoingMessage<T> withMessage(T message) {
         this.message = message;
         return this;
     }
+    
     
     /**
      * Get the message contained in the outgoing message
@@ -58,5 +69,9 @@ public class OutgoingMessage<T> {
      */
     public String getUniqueId() {
         return this.uniqueId;
+    }
+    
+    public long getPriority() {
+        return this.priority;
     }
 }

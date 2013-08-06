@@ -6,12 +6,12 @@ public class SimModule extends SchlepPluginModule {
     public static final String SCHEME = "sim";
     
     public SimModule() {
-        super(SCHEME,
-            SimMessageConsumerProvider.class,
-            SimMessageProducerProvider.class);
+        super(SCHEME);
     }
 
     @Override
     public void internalConfigure() {
+        this.registerMessageConsumerProvider(SimMessageConsumerProvider.class);
+        this.registerMessageProducerProvider(SimMessageProducerProvider.class);
     }
 }

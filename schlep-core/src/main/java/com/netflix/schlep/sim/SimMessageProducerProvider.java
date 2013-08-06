@@ -1,6 +1,5 @@
 package com.netflix.schlep.sim;
 
-import java.io.IOException;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -30,10 +29,6 @@ public class SimMessageProducerProvider implements MessageProducerProvider {
     @Override
     public <T> MessageProducer<T> getProducer(final EndpointKey<T> key) {
         return new MessageProducer<T>() {
-            @Override
-            public void close() throws IOException {
-            }
-
             @Override
             public ListenableFuture<Boolean> produce(OutgoingMessage<T> message) throws ProducerException {
                 LOG.info("Producing message: " + message.getMessage());

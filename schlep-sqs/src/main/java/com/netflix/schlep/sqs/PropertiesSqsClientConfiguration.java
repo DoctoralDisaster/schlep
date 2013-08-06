@@ -19,22 +19,22 @@ import com.netflix.schlep.sqs.retry.RetryPolicyFactory;
  * @author elandau
  */
 public class PropertiesSqsClientConfiguration implements SqsClientConfiguration {
-    public static final String PROP_READ_TIMEOUT               = "%s.netflix.messaging.cloud.readTimeoutInMillis";
-    public static final String PROP_WAIT_TIMEOUT               = "%s.netflix.messaging.cloud.waitTimeoutInMillis";
-    public static final String PROP_CONNECT_TIMEOUT            = "%s.netflix.messaging.cloud.connectTimeoutInMillis";
-    public static final String PROP_NO_HTTPCONNECTIONS         = "%s.netflix.messaging.cloud.maxHttpConnections";
-    public static final String PROP_MAX_HTTP_RETRIES           = "%s.netflix.messaging.cloud.maxRetries";
-    public static final String PROP_QUEUE_REGION               = "%s.netflix.messaging.cloud.region";
-    public static final String PROP_VISIBILITY_TIMEOUT         = "%s.netflix.messaging.cloud.visibilityTimeoutInSeconds";
-    public static final String PROP_RETRY_TYPE                 = "%s.netflix.messaging.cloud.retry.type";
-    public static final String PROP_RETRY_PROPERTIES           = "%s.netflix.messaging.cloud.retry";
-    public static final String PROP_MAX_SQS_RETRIES            = "%s.netflix.messaging.cloud.retry.maxRetries";
-    public static final String PROP_MAX_BATCH_SIZE             = "%s.netflix.messaging.cloud.maxBatchSize";
-    public static final String PROP_SEND_BATCH_MAX_TOTAL_BYTES = "%s.netflix.messaging.cloud.sendBatchMaxTotalBytes";
-    public static final String PROP_ENABLE_BASE64_ENCODING     = "%s.netflix.messaging.cloud.enableBase64Encoding";
-    public static final String PROP_QUEUE_NAME                 = "%s.netflix.messaging.cloud.name";
-    public static final String PROP_THREAD_COUNT               = "%s.netflix.messaging.cloud.threadCount";
-    public static final String PROP_TERMINATE_TIMEOUT          = "%s.netflix.messaging.cloud.terminateTimeoutInMillis";
+    public static final String PROP_READ_TIMEOUT               = "%s.netflix.messaging.sqs.readTimeoutInMillis";
+    public static final String PROP_WAIT_TIMEOUT               = "%s.netflix.messaging.sqs.waitTimeoutInMillis";
+    public static final String PROP_CONNECT_TIMEOUT            = "%s.netflix.messaging.sqs.connectTimeoutInMillis";
+    public static final String PROP_NO_HTTPCONNECTIONS         = "%s.netflix.messaging.sqs.maxHttpConnections";
+    public static final String PROP_MAX_HTTP_RETRIES           = "%s.netflix.messaging.sqs.maxRetries";
+    public static final String PROP_QUEUE_REGION               = "%s.netflix.messaging.sqs.region";
+    public static final String PROP_VISIBILITY_TIMEOUT         = "%s.netflix.messaging.sqs.visibilityTimeoutInSeconds";
+    public static final String PROP_RETRY_TYPE                 = "%s.netflix.messaging.sqs.retry.type";
+    public static final String PROP_RETRY_PROPERTIES           = "%s.netflix.messaging.sqs.retry";
+    public static final String PROP_MAX_SQS_RETRIES            = "%s.netflix.messaging.sqs.retry.maxRetries";
+    public static final String PROP_MAX_BATCH_SIZE             = "%s.netflix.messaging.sqs.maxBatchSize";
+    public static final String PROP_SEND_BATCH_MAX_TOTAL_BYTES = "%s.netflix.messaging.sqs.sendBatchMaxTotalBytes";
+    public static final String PROP_ENABLE_BASE64_ENCODING     = "%s.netflix.messaging.sqs.enableBase64Encoding";
+    public static final String PROP_QUEUE_NAME                 = "%s.netflix.messaging.sqs.name";
+    public static final String PROP_THREAD_COUNT               = "%s.netflix.messaging.sqs.threadCount";
+    public static final String PROP_TERMINATE_TIMEOUT          = "%s.netflix.messaging.sqs.terminateTimeoutInMillis";
 
     public static final int DEFAULT_MAX_HTTP_CONNECTIONS       = 10000;
     public static final int DEFAULT_MAX_HTTP_RETRIES           = 5;

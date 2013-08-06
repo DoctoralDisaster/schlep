@@ -9,13 +9,14 @@ public class SqsModule extends SchlepPluginModule {
     public static final String NAME = "sqs";
     
     public SqsModule() {
-        super(NAME,
-            SqsMessageConsumerProvider.class,
-            SqsMessageProducerProvider.class);
+        super(NAME);
     }
 
     @Override
     public void internalConfigure() {
+        this.registerMessageConsumerProvider(SqsMessageConsumerProvider.class);
+        this.registerMessageProducerProvider(SqsMessageProducerProvider.class);
+        
         registerRetryPolicy("none", NoRetryPolicy.class);
     }
 

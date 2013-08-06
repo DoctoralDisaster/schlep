@@ -18,7 +18,6 @@ import com.google.inject.Injector;
 import com.google.inject.Scopes;
 import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.governator.lifecycle.LifecycleManager;
-import com.netflix.schlep.apq.ApqModule;
 import com.netflix.schlep.exception.ConsumerException;
 import com.netflix.schlep.sim.SimModule;
 import com.netflix.schlep.sqs.SqsModule;
@@ -102,7 +101,6 @@ public class SchlepTest {
             .withModules(
                 new SimModule(),
                 new SqsModule(),
-                new ApqModule(),
                 new SchlepModule(),
                 new AbstractModule() {
                     @Override

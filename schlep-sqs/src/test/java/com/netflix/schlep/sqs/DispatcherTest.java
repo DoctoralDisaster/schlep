@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -113,7 +114,7 @@ public class DispatcherTest {
         }
         
         public void produce(MyMessage message) throws Exception {
-            message1Producer.produce(message).get();
+            ListenableFuture<Boolean> response = message1Producer.produce(message);
         }
     }
     

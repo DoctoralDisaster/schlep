@@ -1,6 +1,5 @@
 package com.netflix.schlep.sim;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -22,7 +21,7 @@ import com.netflix.schlep.exception.ConsumerException;
 public class SimMessageConsumerProvider implements MessageConsumerProvider {
     private static final Logger LOG = LoggerFactory.getLogger(SimMessageConsumerProvider.class);
     
-    private Map<String, CallbackHolder> callbacks = Maps.newHashMap();
+    private Map<String, CallbackHolder<?>> callbacks = Maps.newHashMap();
     
     private static class CallbackHolder<T> implements MessageConsumer<T> {
         private final MessageCallback<T> callback;
