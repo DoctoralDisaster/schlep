@@ -172,7 +172,7 @@ public class PropertiesSqsClientConfiguration implements SqsClientConfiguration 
     }
 
     @Override
-    public BatchStrategy getAckBatchStrategy() {
+    public BatchStrategy getBatchStrategy() {
         return this.batchStrategy;
     }
 }

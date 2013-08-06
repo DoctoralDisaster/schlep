@@ -40,5 +40,5 @@ public interface SqsClientConfiguration {
     
     RetryPolicy getRetryPolicy();
 
-    BatchStrategy getAckBatchStrategy();
+    BatchStrategy getBatchStrategy();
 }

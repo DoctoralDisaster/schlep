@@ -35,6 +35,7 @@ import com.netflix.schlep.exception.ProducerException;
 
 /**
  * Concrete implementation of the SQS client using the Amazon provided client
+ * Note that this client is attached to a specific queue
  * 
  * @author elandau
  */
@@ -61,17 +62,19 @@ public class AmazonSqsClient implements SqsClient {
         
         // Determine the queue URL
         GetQueueUrlRequest request = new GetQueueUrlRequest();
-        if (!isFullQualifiedQueueName(clientConfig.getQueueName())) {
+        QueueName queueName = new QueueName(clientConfig.getQueueName());
+        
+        if (!queueName.isFullQualifiedName()) {
             // List all queue names and find the one which has a full url ending with the queue name
             ListQueuesRequest listRequest = new ListQueuesRequest()
-                .withQueueNamePrefix(clientConfig.getQueueName());
-            
+                .withQueueNamePrefix(queueName.getName());
             ListQueuesResult listResult = client.listQueues(listRequest);
+            
             List<String> queueUrlList = listResult.getQueueUrls();
             boolean found = false;
             for (String queueUrl : queueUrlList) {
                 String queueNameFromUrl = queueUrl.substring(queueUrl.lastIndexOf("/") + 1);
-                if(queueNameFromUrl.equals(clientConfig.getQueueName()))
+                if(queueNameFromUrl.equals(queueName.getName()))
                     found = true;
             }
 
@@ -80,13 +83,11 @@ public class AmazonSqsClient implements SqsClient {
                 throw new Exception("SQS queue not found. " + clientConfig.getQueueName());
             }
             
-            request.setQueueName(clientConfig.getQueueName());
+            request.setQueueName(queueName.getName());
         }
         else {
-            // pair is <ownerAccountId, queueName>
-            String[] pair = splitFullyQualifiedQueueName(clientConfig.getQueueName());
-            request.setQueueOwnerAWSAccountId(pair[0]);
-            request.setQueueName(pair[1]);
+            request.setQueueOwnerAWSAccountId(queueName.getAccountId());
+            request.setQueueName(queueName.getName());
         }
         
         // get queueUrl string as required for subsequent calls to AmazonSQSClient

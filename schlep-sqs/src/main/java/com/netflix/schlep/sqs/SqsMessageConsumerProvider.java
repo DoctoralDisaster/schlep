@@ -6,7 +6,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.configuration.AbstractConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,17 +38,14 @@ public class SqsMessageConsumerProvider implements MessageConsumerProvider {
     
     private final SqsClientFactory              clientFactory;
     private final SqsClientConfigurationFactory configurationFactory;
-    private final AbstractConfiguration         config;
     
     @Inject
     public SqsMessageConsumerProvider(
             SqsClientConfigurationFactory configurationFactory,
-            SqsClientFactory              clientFactory,
-            AbstractConfiguration         config
+            SqsClientFactory              clientFactory
             ) {
         this.clientFactory        = clientFactory;
         this.configurationFactory = configurationFactory;
-        this.config               = config;
     }
     
     @Override
@@ -88,14 +84,14 @@ public class SqsMessageConsumerProvider implements MessageConsumerProvider {
                 transform = new NoOpTransform();
             }
             
-            this.ackBatcher     = clientConfig.getAckBatchStrategy().create(new Function<List<MessageFuture<Boolean>>, Boolean>() {
+            this.ackBatcher     = clientConfig.getBatchStrategy().create(new Function<List<MessageFuture<Boolean>>, Boolean>() {
                 public Boolean apply(List<MessageFuture<Boolean>> messages) {
                     client.deleteMessages(messages);
                     return true;
                 }
             });
             
-            this.renewBatcher     = clientConfig.getAckBatchStrategy().create(new Function<List<MessageFuture<Boolean>>, Boolean>() {
+            this.renewBatcher     = clientConfig.getBatchStrategy().create(new Function<List<MessageFuture<Boolean>>, Boolean>() {
                 public Boolean apply(List<MessageFuture<Boolean>> messages) {
                     client.renewMessages(messages);
                     return true;

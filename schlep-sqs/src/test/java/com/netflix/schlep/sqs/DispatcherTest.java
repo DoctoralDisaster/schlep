@@ -132,9 +132,9 @@ public class DispatcherTest {
                         PropertiesConfiguration config = new PropertiesConfiguration();
                         
                         config.addProperty("consumer1.netflix.messaging.cloud.type", "sqs");
-                        config.addProperty("consumer1.netflix.messaging.cloud.name", "foo");
+                        config.addProperty("consumer1.netflix.messaging.sqs.name", "foo");
                         config.addProperty("producer1.netflix.messaging.cloud.type", "sqs");
-                        config.addProperty("producer1.netflix.messaging.cloud.name", "foo");
+                        config.addProperty("producer1.netflix.messaging.sqs.name", "foo");
                         
                         bind(AbstractConfiguration.class).toInstance(config);
                         bind(MyService.class).in(Scopes.SINGLETON);
