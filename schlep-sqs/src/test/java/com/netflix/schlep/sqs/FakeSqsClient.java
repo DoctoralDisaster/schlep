@@ -58,12 +58,12 @@ public class FakeSqsClient implements SqsClient {
     }
 
 	@Override
-	public List<MessageAndFuture<Boolean>> sendMessages(List<MessageAndFuture<Boolean>> messages) {
-	    for (MessageAndFuture<Boolean> entry : messages) {
+	public List<MessageFuture<Boolean>> sendMessages(List<MessageFuture<Boolean>> messages) {
+	    for (MessageFuture<Boolean> entry : messages) {
 	        LOG.info("Send message: " + entry.getMessage());
 	        
 	        queue.add(entry.getMessage());
-	        entry.getFuture().set(true);
+	        entry.set(true);
 	    }
 	    
 	    return ImmutableList.of();
@@ -75,15 +75,15 @@ public class FakeSqsClient implements SqsClient {
 	}
 
     @Override
-    public List<MessageAndFuture<Boolean>> renewMessages(
-            List<MessageAndFuture<Boolean>> messages) {
+    public List<MessageFuture<Boolean>> renewMessages(
+            List<MessageFuture<Boolean>> messages) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public List<MessageAndFuture<Boolean>> deleteMessages(
-            List<MessageAndFuture<Boolean>> messages) {
+    public List<MessageFuture<Boolean>> deleteMessages(
+            List<MessageFuture<Boolean>> messages) {
         // TODO Auto-generated method stub
         return null;
     }

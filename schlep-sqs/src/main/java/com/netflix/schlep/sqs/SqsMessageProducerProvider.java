@@ -93,8 +93,6 @@ public class SqsMessageProducerProvider implements MessageProducerProvider {
         
         @Override
         public ListenableFuture<Boolean> produce(OutgoingMessage<T> message) throws ProducerException {
-            SettableFuture<Boolean> future = SettableFuture.create();
-            
             String msgBody;
 			try {
 				msgBody = this.transform.apply(this.serializer.serialize(message.getMessage()));
@@ -105,7 +103,8 @@ public class SqsMessageProducerProvider implements MessageProducerProvider {
 			Message sqsMessage = new Message()
 			    .withBody(msgBody);
             
-            client.sendMessages(ImmutableList.of(new MessageAndFuture<Boolean>(sqsMessage, future)));
+			MessageFuture<Boolean> future = new MessageFuture<Boolean>(sqsMessage);
+            client.sendMessages(ImmutableList.of(future));
             return future;
         }
     }

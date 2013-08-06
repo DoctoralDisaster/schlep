@@ -142,12 +142,12 @@ public class AmazonSqsClient implements SqsClient {
     }
     
     @Override
-    public List<MessageAndFuture<Boolean>> deleteMessages(List<MessageAndFuture<Boolean>> messages) {
+    public List<MessageFuture<Boolean>> deleteMessages(List<MessageFuture<Boolean>> messages) {
         // Construct a send message request and assign each message an ID equivalent to it's position
         // in the original list for fast lookup on the response
         final List<DeleteMessageBatchRequestEntry> batchReqEntries = new ArrayList<DeleteMessageBatchRequestEntry>(messages.size());
         int id = 0;
-        for (MessageAndFuture<Boolean> message : messages) {
+        for (MessageFuture<Boolean> message : messages) {
             batchReqEntries.add(new DeleteMessageBatchRequestEntry(
                     Integer.toString(id), 
                     message.getMessage().getReceiptHandle()));
@@ -164,17 +164,17 @@ public class AmazonSqsClient implements SqsClient {
 
         // Update the future for successful sends
         for (DeleteMessageBatchResultEntry entry : result.getSuccessful()) {
-            messages.get(Integer.parseInt(entry.getId())).getFuture().set(true);
+            messages.get(Integer.parseInt(entry.getId())).set(true);
         }
 
         // Handle failed sends
         if (result.getFailed() != null && !result.getFailed().isEmpty()) {
-            List<MessageAndFuture<Boolean>> retryableMessages = Lists.newArrayListWithCapacity(result.getFailed().size());
+            List<MessageFuture<Boolean>> retryableMessages = Lists.newArrayListWithCapacity(result.getFailed().size());
             for (BatchResultErrorEntry entry : result.getFailed()) {
                 // There cannot be resent and are probably the result of something like message exceeding
                 // the max size or certificate errors
                 if (entry.isSenderFault()) {
-                    messages.get(Integer.parseInt(entry.getId())).getFuture().setException(new ProducerException(entry.getCode()));
+                    messages.get(Integer.parseInt(entry.getId())).setException(new ProducerException(entry.getCode()));
                 }
                 // These messages can probably be resent and may be due to issues on the amazon side, 
                 // such as service timeout
@@ -191,12 +191,12 @@ public class AmazonSqsClient implements SqsClient {
     }
     
     @Override
-    public List<MessageAndFuture<Boolean>> renewMessages(List<MessageAndFuture<Boolean>> messages) {
+    public List<MessageFuture<Boolean>> renewMessages(List<MessageFuture<Boolean>> messages) {
         // Construct a send message request and assign each message an ID equivalent to it's position
         // in the original list for fast lookup on the response
         final List<ChangeMessageVisibilityBatchRequestEntry> batchReqEntries = new ArrayList<ChangeMessageVisibilityBatchRequestEntry>(messages.size());
         int id = 0;
-        for (MessageAndFuture<Boolean> messageRenew : messages) {
+        for (MessageFuture<Boolean> messageRenew : messages) {
             // TODO: Add delay
             batchReqEntries.add(new ChangeMessageVisibilityBatchRequestEntry()
                     .withId(Integer.toString(id)) 
@@ -214,17 +214,17 @@ public class AmazonSqsClient implements SqsClient {
         
         // Update the future for successful sends
         for (ChangeMessageVisibilityBatchResultEntry entry : result.getSuccessful()) {
-            messages.get(Integer.parseInt(entry.getId())).getFuture().set(true);
+            messages.get(Integer.parseInt(entry.getId())).set(true);
         }
         
         // Handle failed sends
         if (result.getFailed() != null && !result.getFailed().isEmpty()) {
-            List<MessageAndFuture<Boolean>> retryableMessages = Lists.newArrayListWithCapacity(result.getFailed().size());
+            List<MessageFuture<Boolean>> retryableMessages = Lists.newArrayListWithCapacity(result.getFailed().size());
             for (BatchResultErrorEntry entry : result.getFailed()) {
                 // There cannot be resent and are probably the result of something like message exceeding
                 // the max size or certificate errors
                 if (entry.isSenderFault()) {
-                    messages.get(Integer.parseInt(entry.getId())).getFuture().setException(new ProducerException(entry.getCode()));
+                    messages.get(Integer.parseInt(entry.getId())).setException(new ProducerException(entry.getCode()));
                 }
                 // These messages can probably be resent and may be due to issues on the amazon side, 
                 // such as service timeout
@@ -241,12 +241,12 @@ public class AmazonSqsClient implements SqsClient {
     }
 
     @Override
-    public List<MessageAndFuture<Boolean>> sendMessages(final List<MessageAndFuture<Boolean>> messages) {
+    public List<MessageFuture<Boolean>> sendMessages(final List<MessageFuture<Boolean>> messages) {
         // Construct a send message request and assign each message an ID equivalent to it's position
         // in the original list for fast lookup on the response
         final List<SendMessageBatchRequestEntry> batchReqEntries = new ArrayList<SendMessageBatchRequestEntry>(messages.size());
         int id = 0;
-        for (MessageAndFuture<Boolean> message : messages) {
+        for (MessageFuture<Boolean> message : messages) {
             // TODO: Add delay
             batchReqEntries.add(new SendMessageBatchRequestEntry(Integer.toString(id), message.getMessage().getBody()));
             ++id;
@@ -261,17 +261,17 @@ public class AmazonSqsClient implements SqsClient {
         
         // Update the future for successful sends
         for (SendMessageBatchResultEntry entry : result.getSuccessful()) {
-            messages.get(Integer.parseInt(entry.getId())).getFuture().set(true);
+            messages.get(Integer.parseInt(entry.getId())).set(true);
         }
         
         // Handle failed sends
         if (result.getFailed() != null && !result.getFailed().isEmpty()) {
-            List<MessageAndFuture<Boolean>> retryableMessages = Lists.newArrayListWithCapacity(result.getFailed().size());
+            List<MessageFuture<Boolean>> retryableMessages = Lists.newArrayListWithCapacity(result.getFailed().size());
             for (BatchResultErrorEntry entry : result.getFailed()) {
                 // There cannot be resent and are probably the result of something like message exceeding
                 // the max size or certificate errors
                 if (entry.isSenderFault()) {
-                    messages.get(Integer.parseInt(entry.getId())).getFuture().setException(new ProducerException(entry.getCode()));
+                    messages.get(Integer.parseInt(entry.getId())).setException(new ProducerException(entry.getCode()));
                 }
                 // These messages can probably be resent and may be due to issues on the amazon side, 
                 // such as service timeout

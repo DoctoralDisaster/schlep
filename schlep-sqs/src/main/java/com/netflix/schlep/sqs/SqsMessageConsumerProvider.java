@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.sqs.model.Message;
 import com.google.common.base.Function;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.netflix.schlep.EndpointKey;
@@ -68,8 +67,8 @@ public class SqsMessageConsumerProvider implements MessageConsumerProvider {
         private final EndpointKey<T>              key;
         private final String                      consumerName;
         private Function<String, String>          transform;
-        private final Batcher<MessageAndFuture<Boolean>>   ackBatcher;
-        private final Batcher<MessageAndFuture<Boolean>>   renewBatcher;
+        private final Batcher<MessageFuture<Boolean>>   ackBatcher;
+        private final Batcher<MessageFuture<Boolean>>   renewBatcher;
         private final SqsClientConfiguration      clientConfig;
         private final Serializer<T>               serializer;
         private ExecutorService                   executor;
@@ -89,15 +88,15 @@ public class SqsMessageConsumerProvider implements MessageConsumerProvider {
                 transform = new NoOpTransform();
             }
             
-            this.ackBatcher     = clientConfig.getAckBatchStrategy().create(new Function<List<MessageAndFuture<Boolean>>, Boolean>() {
-                public Boolean apply(List<MessageAndFuture<Boolean>> messages) {
+            this.ackBatcher     = clientConfig.getAckBatchStrategy().create(new Function<List<MessageFuture<Boolean>>, Boolean>() {
+                public Boolean apply(List<MessageFuture<Boolean>> messages) {
                     client.deleteMessages(messages);
                     return true;
                 }
             });
             
-            this.renewBatcher     = clientConfig.getAckBatchStrategy().create(new Function<List<MessageAndFuture<Boolean>>, Boolean>() {
-                public Boolean apply(List<MessageAndFuture<Boolean>> messages) {
+            this.renewBatcher     = clientConfig.getAckBatchStrategy().create(new Function<List<MessageFuture<Boolean>>, Boolean>() {
+                public Boolean apply(List<MessageFuture<Boolean>> messages) {
                     client.renewMessages(messages);
                     return true;
                 }
@@ -185,16 +184,16 @@ public class SqsMessageConsumerProvider implements MessageConsumerProvider {
                 callback.consume(new SqsIncomingMessage<T>(message, entity, sw, visibilityTimeout) {
                     @Override
                     public ListenableFuture<Boolean> ack() {
-                        SettableFuture<Boolean> future = SettableFuture.create();
-                        ackBatcher.add(new MessageAndFuture<Boolean>(message, future));
+                        MessageFuture<Boolean> future = new MessageFuture<Boolean>(message);
+                        ackBatcher.add(future);
                         return future;
                     }
 
                     @Override
                     public ListenableFuture<Boolean> renew(long duration, TimeUnit units) {
                         extendVisibilityTimeout(duration, units);
-                        SettableFuture<Boolean> future = SettableFuture.create();
-                        renewBatcher.add(new MessageAndFuture<Boolean>(message, future, this.getVisibilityTimeout(TimeUnit.SECONDS)));
+                        MessageFuture<Boolean> future = new MessageFuture<Boolean>(message, this.getVisibilityTimeout(TimeUnit.SECONDS));
+                        renewBatcher.add(future);
                         return future;
                     }
 

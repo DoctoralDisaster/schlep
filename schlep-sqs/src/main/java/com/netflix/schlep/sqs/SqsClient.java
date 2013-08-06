@@ -44,7 +44,7 @@ public interface SqsClient {
      * 
      * @return  Collection of failed messages
      */
-    public List<MessageAndFuture<Boolean>> sendMessages(List<MessageAndFuture<Boolean>> messages);
+    public List<MessageFuture<Boolean>> sendMessages(List<MessageFuture<Boolean>> messages);
     
     /**
      * Delete the messages, which is effectively is acking them.
@@ -52,12 +52,12 @@ public interface SqsClient {
      * @param messages
      * @return
      */
-    public List<MessageAndFuture<Boolean>> deleteMessages(List<MessageAndFuture<Boolean>> messages);
+    public List<MessageFuture<Boolean>> deleteMessages(List<MessageFuture<Boolean>> messages);
     
     /**
      * Extend the visibility timeout for these messages
      * @param messages
      * @return
      */
-    public List<MessageAndFuture<Boolean>> renewMessages(List<MessageAndFuture<Boolean>> messages);
+    public List<MessageFuture<Boolean>> renewMessages(List<MessageFuture<Boolean>> messages);
 }
