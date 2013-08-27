@@ -7,6 +7,10 @@ package com.netflix.schlep.exception;
  */
 public class ConsumerException extends MessagingException {
 
+    public ConsumerException(Exception e) {
+        super(e);
+    }
+    
     public ConsumerException(String msg, Exception e) {
         super(msg, e);
     }

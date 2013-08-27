@@ -9,16 +9,17 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Singleton;
-import com.netflix.schlep.IncomingMessage;
-import com.netflix.schlep.MessageCallback;
-import com.netflix.schlep.MessageConsumer;
-import com.netflix.schlep.MessageConsumerProvider;
 import com.netflix.schlep.EndpointKey;
-import com.netflix.schlep.OutgoingMessage;
+import com.netflix.schlep.config.ConfigurationReader;
+import com.netflix.schlep.consumer.IncomingMessage;
+import com.netflix.schlep.consumer.MessageCallback;
+import com.netflix.schlep.consumer.MessageConsumer;
+import com.netflix.schlep.consumer.MessageConsumerFactory;
 import com.netflix.schlep.exception.ConsumerException;
+import com.netflix.schlep.producer.OutgoingMessage;
 
 @Singleton
-public class SimMessageConsumerProvider implements MessageConsumerProvider {
+public class SimMessageConsumerProvider implements MessageConsumerFactory {
     private static final Logger LOG = LoggerFactory.getLogger(SimMessageConsumerProvider.class);
     
     private Map<String, CallbackHolder<?>> callbacks = Maps.newHashMap();
@@ -106,7 +107,7 @@ public class SimMessageConsumerProvider implements MessageConsumerProvider {
     }
     
     @Override
-    public <T> MessageConsumer<T> subscribe(EndpointKey<T> key, MessageCallback<T> callback) {
+    public <T> MessageConsumer<T> createSubscriber(EndpointKey<T> key, ConfigurationReader mapper, MessageCallback<T> callback) {
         LOG.info("Subscribing to " + key);
         CallbackHolder consumer = callbacks.get(key.getName());
         if (consumer == null) {

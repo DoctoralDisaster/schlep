@@ -1,6 +1,6 @@
 package com.netflix.schlep.sqs;
 
-import com.netflix.schlep.QueueAttribute;
+import com.netflix.schlep.admin.QueueAttribute;
 
 public enum SqsQueueAttribute implements QueueAttribute {
 

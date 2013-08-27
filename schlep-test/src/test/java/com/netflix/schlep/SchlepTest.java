@@ -18,9 +18,16 @@ import com.google.inject.Injector;
 import com.google.inject.Scopes;
 import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.governator.lifecycle.LifecycleManager;
+import com.netflix.schlep.consumer.IncomingMessage;
+import com.netflix.schlep.consumer.MessageCallback;
+import com.netflix.schlep.consumer.MessageConsumer;
+import com.netflix.schlep.consumer.MessageConsumerFactory;
 import com.netflix.schlep.exception.ConsumerException;
-import com.netflix.schlep.sim.SimModule;
-import com.netflix.schlep.sqs.SqsModule;
+import com.netflix.schlep.guice.SchlepModule;
+import com.netflix.schlep.producer.MessageProducer;
+import com.netflix.schlep.producer.MessageProducerFactory;
+import com.netflix.schlep.sim.SimSchlepModule;
+import com.netflix.schlep.sqs.SqsSchlepModule;
 
 public class SchlepTest {
     private static final Logger LOG = LoggerFactory.getLogger(SchlepTest.class);
@@ -48,9 +55,9 @@ public class SchlepTest {
     }
     
     public static class MyService {
-        private final MessageConsumerProvider consumerProvider;
+        private final MessageConsumerFactory consumerProvider;
         
-        private final MessageProducerProvider producerProvider;
+        private final MessageProducerFactory producerProvider;
         
         private MessageConsumer<Message1> message1Consumer;
         
@@ -59,28 +66,28 @@ public class SchlepTest {
         private MessageProducer<Message1> message1Producer;
         
         @Inject
-        public MyService(MessageConsumerProvider consumerProvider, MessageProducerProvider producerProvider) {
+        public MyService(MessageConsumerFactory consumerProvider, MessageProducerFactory producerProvider) {
             this.consumerProvider = consumerProvider;
             this.producerProvider = producerProvider;
         }
         
         @PostConstruct 
         public void init() throws Exception {
-            message1Consumer = this.consumerProvider.subscribe(EndpointKey.of("foo", Message1.class), new MessageCallback<Message1>() {
+            message1Consumer = this.consumerProvider.createSubscriber(EndpointKey.of("foo", Message1.class), null, new MessageCallback<Message1>() {
                 @Override
                 public void consume(IncomingMessage<Message1> message) throws ConsumerException {
                     LOG.info("Consume: " + message.getEntity());
                 }
             });
             
-            message2Consumer = this.consumerProvider.subscribe(EndpointKey.of("bar", Message2.class), new MessageCallback<Message2>() {
+            message2Consumer = this.consumerProvider.createSubscriber(EndpointKey.of("bar", Message2.class), null, new MessageCallback<Message2>() {
                 @Override
                 public void consume(IncomingMessage<Message2> message) throws ConsumerException {
                     LOG.info("Consume: " + message.getEntity());
                 }
             });
             
-            message1Producer = this.producerProvider.getProducer(EndpointKey.of("foo", Message1.class));
+            message1Producer = this.producerProvider.createProducer(EndpointKey.of("foo", Message1.class), null);
         }
         
         @PreDestroy 
@@ -90,7 +97,7 @@ public class SchlepTest {
         }
         
         public void produce(Message1 message) throws Exception {
-            message1Producer.produce(new OutgoingMessage<Message1>().withMessage(message));
+            message1Producer.produce(message);
         }
     }
     
@@ -99,8 +106,8 @@ public class SchlepTest {
         // Boostrap
         Injector injector = LifecycleInjector.builder()
             .withModules(
-                new SimModule(),
-                new SqsModule(),
+                new SimSchlepModule(),
+                new SqsSchlepModule(),
                 new SchlepModule(),
                 new AbstractModule() {
                     @Override

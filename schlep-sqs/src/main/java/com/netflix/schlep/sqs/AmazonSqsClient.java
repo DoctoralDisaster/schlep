@@ -52,9 +52,9 @@ public class AmazonSqsClient implements SqsClient {
         
         // Construct the client
         this.client = new AmazonSQSClient(awsCredentials.get(), new ClientConfiguration()
-                .withConnectionTimeout(clientConfig.getConnectTimeoutInMillis() + clientConfig.getWaitTimeoutInMillis())
+                .withConnectionTimeout(clientConfig.getConnectTimeoutInMillis())
                 .withSocketTimeout    (clientConfig.getReadTimeoutInMillis())
-                .withMaxConnections   (clientConfig.getMaxHttpConnections())
+                .withMaxConnections   (clientConfig.getMaxConnections())
                 .withMaxErrorRetry    (clientConfig.getMaxRetries()));
         
         // Modify the region endpoint

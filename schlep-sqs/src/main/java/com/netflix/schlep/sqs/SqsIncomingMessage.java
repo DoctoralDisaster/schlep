@@ -3,7 +3,7 @@ package com.netflix.schlep.sqs;
 import java.util.concurrent.TimeUnit;
 
 import com.amazonaws.services.sqs.model.Message;
-import com.netflix.schlep.IncomingMessage;
+import com.netflix.schlep.consumer.IncomingMessage;
 import com.netflix.schlep.util.UnstoppableStopwatch;
 
 /**

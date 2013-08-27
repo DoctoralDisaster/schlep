@@ -17,8 +17,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.netflix.schlep.QueueAdmin;
-import com.netflix.schlep.QueueAttributes;
+import com.netflix.schlep.admin.QueueAdmin;
+import com.netflix.schlep.admin.QueueAttributes;
 
 public class SqsQueueAdmin implements QueueAdmin {
     

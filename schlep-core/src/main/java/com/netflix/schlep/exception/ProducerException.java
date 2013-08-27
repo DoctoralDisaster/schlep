@@ -8,4 +8,8 @@ public class ProducerException extends MessagingException {
     public ProducerException(String msg) {
         super(msg);
     }
+    
+    public ProducerException(Exception e) {
+        super(e);
+    }
 }

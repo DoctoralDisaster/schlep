@@ -3,7 +3,13 @@ package com.netflix.schlep.sqs;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * Wrapper for queuename providing access to parts of the name
+ * Wrapper for queuename providing access to parts of the name.
+ * 
+ * A queue name may be a simple string or a fully qualified queue name.
+ * 1: /accountid/queuename
+ * 2: /queuename
+ * 
+ * 
  * @author elandau
  *
  */

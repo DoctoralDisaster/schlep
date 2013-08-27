@@ -46,6 +46,7 @@ subprojects {
         compile     'com.netflix.eureka:eureka-client:1.1.73'
         compile     'cglib:cglib:2.2.2';
         compile     'org.javassist:javassist:3.17.1-GA'
+        compile     'commons-beanutils:commons-beanutils-core:1.8.3'
         testCompile 'junit:junit:4.11'
         testCompile 'org.mockito:mockito-core:1.8.5'
     }
@@ -95,6 +96,19 @@ project(':schlep-examples') {
     apply plugin: 'java'
     dependencies {
         compile  project(':schlep-core')
+        testCompile 'junit:junit:4.11'
+    }
+}
+
+project(':schlep-eventbus') {
+    apply plugin: 'java'
+    dependencies {
+        compile  'javax.servlet:servlet-api:2.5'
+        compile  'com.sun.jersey:jersey-server:1.17'
+        compile  'org.eclipse.jetty:jetty-servlet:7.4.1.v20110513'
+        compile  project(':schlep-core')
+        compile  project(':schlep-eventbus')
+        compile  project(':schlep-sqs')
         testCompile 'junit:junit:4.11'
     }
 }
