@@ -17,7 +17,7 @@ public final class ConfigurationReaders {
     public <T> ConfigurationReader ofInstance(final T object) {
         return new ConfigurationReader() {
             @Override
-            public <S> S create(Class<S> type) throws Exception {
+            public <S> S read(Class<S> type) throws Exception {
                 if (type.getClass().equals(object.getClass())) {
                     return (S)object;
                 }

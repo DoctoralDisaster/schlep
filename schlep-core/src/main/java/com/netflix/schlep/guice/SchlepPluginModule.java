@@ -2,9 +2,9 @@ package com.netflix.schlep.guice;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.MapBinder;
-import com.netflix.schlep.consumer.MessageConsumerFactory;
-import com.netflix.schlep.producer.MessageProducerFactory;
-import com.netflix.schlep.producer.ScheduledMessageProducerProvider;
+import com.netflix.schlep.reader.MessageReaderFactory;
+import com.netflix.schlep.writer.MessageWriterFactory;
+import com.netflix.schlep.writer.ScheduledMessageProducerProvider;
 
 public abstract class SchlepPluginModule extends AbstractModule {
     private final String schema;
@@ -18,13 +18,13 @@ public abstract class SchlepPluginModule extends AbstractModule {
         internalConfigure();
     }
 
-    protected void registerMessageConsumerProvider(Class<? extends MessageConsumerFactory> consumerProvider) {
-        MapBinder<String, MessageConsumerFactory> consumers = MapBinder.newMapBinder(binder(), String.class, MessageConsumerFactory.class);
+    protected void registerMessageConsumerProvider(Class<? extends MessageReaderFactory> consumerProvider) {
+        MapBinder<String, MessageReaderFactory> consumers = MapBinder.newMapBinder(binder(), String.class, MessageReaderFactory.class);
         consumers.addBinding(schema).to(consumerProvider);
     }
     
-    protected void registerMessageProducerProvider(Class<? extends MessageProducerFactory> producerProvider) {
-        MapBinder<String, MessageProducerFactory> producers = MapBinder.newMapBinder(binder(), String.class, MessageProducerFactory.class);
+    protected void registerMessageProducerProvider(Class<? extends MessageWriterFactory> producerProvider) {
+        MapBinder<String, MessageWriterFactory> producers = MapBinder.newMapBinder(binder(), String.class, MessageWriterFactory.class);
         producers.addBinding(schema).to(producerProvider);
     }
     

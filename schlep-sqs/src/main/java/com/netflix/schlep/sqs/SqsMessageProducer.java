@@ -13,11 +13,11 @@ import com.netflix.schlep.EndpointKey;
 import com.netflix.schlep.SchlepModules;
 import com.netflix.schlep.exception.ProducerException;
 import com.netflix.schlep.mapper.Serializer;
-import com.netflix.schlep.producer.MessageProducer;
-import com.netflix.schlep.producer.MessageProducerContext;
-import com.netflix.schlep.producer.OutgoingMessage;
 import com.netflix.schlep.sqs.transform.NoOpTransform;
 import com.netflix.schlep.sqs.transform.ToBase64Transform;
+import com.netflix.schlep.writer.MessageProducer;
+import com.netflix.schlep.writer.MessageProducerContext;
+import com.netflix.schlep.writer.OutgoingMessage;
 import com.netflix.util.batch.Batcher;
 import com.netflix.util.retry.RetryPolicy;
 
@@ -72,12 +72,13 @@ public class SqsMessageProducer<T> implements MessageProducer<T> {
             transform = new NoOpTransform();
         }
         
-        this.sendBatcher     = clientConfig.getBatchPolicy().create(new Function<List<MessageFuture<Boolean>>, Boolean>() {
-            public Boolean apply(List<MessageFuture<Boolean>> messages) {
-                SqsMessageProducer.this.client.sendMessages(messages);
-                return true;
-            }
-        });
+        this.sendBatcher     = null;
+//                clientConfig.getBatchPolicy().create(new Function<List<MessageFuture<Boolean>>, Boolean>() {
+//            public Boolean apply(List<MessageFuture<Boolean>> messages) {
+//                SqsMessageProducer.this.client.sendMessages(messages);
+//                return true;
+//            }
+//        });
 
     }
 

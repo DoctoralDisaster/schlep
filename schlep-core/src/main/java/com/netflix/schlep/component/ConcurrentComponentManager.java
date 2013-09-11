@@ -28,6 +28,15 @@ public class ConcurrentComponentManager<K, T> {
     protected class Holder {
         private volatile T   entity;
         private final    ReentrantLock lock = new ReentrantLock();
+        private long     referenceCount = 0;
+        
+        public long addReference() {
+            return ++referenceCount;
+        }
+        
+        public long releaseReference() {
+            return --referenceCount;
+        }
         
         public void lock() {
             lock.tryLock();
@@ -64,7 +73,7 @@ public class ConcurrentComponentManager<K, T> {
      * 
      * @param key
      */
-    public void addComponent(K key, Supplier<T> supplier) throws Exception {
+    public void add(K key, Supplier<T> supplier) throws Exception {
         lock.tryLock(); 
         Holder holder;
         try {
@@ -99,9 +108,10 @@ public class ConcurrentComponentManager<K, T> {
     /**
      * Remove a component 
      * @param key
-     * @return
+     * @return True if component was removed or false if the reference count is greater
+     * than 0.
      */
-    public void removeComponent(K key, Function<T, Void> op) throws Exception {
+    public boolean remove(K key, Function<T, Void> op) throws Exception {
         // Get the component under a lock
         lock.tryLock(); 
         Holder holder = components.get(key);
@@ -117,8 +127,12 @@ public class ConcurrentComponentManager<K, T> {
         // Execute operation on the component under the component lock
         try {
             if (holder.getEntity() != null) {
-                op.apply(holder.getEntity());
-                holder.setEntity(null);
+                if (holder.releaseReference() == 0) {
+                    op.apply(holder.getEntity());
+                    holder.setEntity(null);
+                    return true;
+                }
+                return false;
             }
             else {
                 throw new RuntimeException(String.format("'%s' no longer exists", key));
@@ -138,11 +152,45 @@ public class ConcurrentComponentManager<K, T> {
     }
     
     /**
+     * Acquire a component and increment its reference.  Release
+     * the component when it is no longer needed.  
+     * @param key
+     * @return
+     */
+    public T acquire(K key) {
+        // Get the component under a lock
+        lock.tryLock(); 
+        Holder holder = components.get(key);
+        try {
+            if (holder == null)
+                throw new RuntimeException(String.format("'%s' not found", key));
+            holder.lock();
+        }
+        finally {
+            lock.unlock();
+        }
+        
+        // Execute operation on the component under the component lock
+        try {
+            if (holder.getEntity() != null) {
+                holder.addReference();
+                return holder.getEntity();
+            }
+            else {
+                throw new RuntimeException(String.format("'%s' no longer exists", key));
+            }
+        }
+        finally {
+            holder.unlock();
+        }
+    }
+    
+    /**
      * Safely execute an operation on the component
      * @param key
      * @param op
      */
-    public <R> R executeOperation(K key, Function<T, R> op) throws Exception {
+    public <R> R execute(K key, Function<T, R> op) throws Exception {
         // Remove the component under a lock
         lock.tryLock(); 
         Holder holder = components.get(key);

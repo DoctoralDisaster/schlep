@@ -4,7 +4,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * Abstraction for a serializer used to convert entities to/from strings
+ * Abstraction for a serializer used to convert entities to/from input streams
  * 
  * @author elandau
  *

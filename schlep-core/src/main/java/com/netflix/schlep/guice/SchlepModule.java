@@ -2,15 +2,17 @@ package com.netflix.schlep.guice;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
-import com.netflix.schlep.consumer.MessageConsumerFactory;
-import com.netflix.schlep.impl.ByNamedPropertyMessageConsumerProvider;
-import com.netflix.schlep.impl.ByNamedPropertyMessageProducerProvider;
-import com.netflix.schlep.producer.MessageProducerFactory;
+import com.netflix.schlep.reader.MessageReaderManager;
+import com.netflix.schlep.writer.MessageWriterManager;
 
 public class SchlepModule extends AbstractModule {
     @Override
     protected void configure() {
-        bind(MessageConsumerFactory.class).to(ByNamedPropertyMessageConsumerProvider.class).in(Scopes.SINGLETON);
-        bind(MessageProducerFactory.class).to(ByNamedPropertyMessageProducerProvider.class).in(Scopes.SINGLETON);
+//        bind(MessageReaderFactory.class).to(ByNamedPropertyMessageReaderProvider.class).in(Scopes.SINGLETON);
+//        bind(MessageWriterFactory.class).to(ByNamedPropertyMessageWriterProvider.class).in(Scopes.SINGLETON);
+        
+        bind(MessageReaderManager.class).in(Scopes.SINGLETON);
+        bind(MessageWriterManager.class).in(Scopes.SINGLETON);
+        
     }
 }

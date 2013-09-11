@@ -15,28 +15,27 @@ import com.google.common.base.Function;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netflix.schlep.EndpointKey;
-import com.netflix.schlep.consumer.MessageCallback;
-import com.netflix.schlep.consumer.MessageConsumer;
 import com.netflix.schlep.exception.ConsumerException;
 import com.netflix.schlep.mapper.Serializer;
+import com.netflix.schlep.reader.MessageReader;
 import com.netflix.schlep.sqs.transform.FromBase64Transform;
 import com.netflix.schlep.sqs.transform.NoOpTransform;
 import com.netflix.schlep.util.UnstoppableStopwatch;
 import com.netflix.util.batch.Batcher;
 
-class SqsMessageConsumer<T> implements MessageConsumer<T> {
+class SqsMessageConsumer implements MessageReader {
     private static final Logger LOG = LoggerFactory.getLogger(SqsMessageConsumer.class);
     
     private static final long THROTTLE_TIMESPAN = 1000;
 
-    private final MessageCallback<T>          callback;
-    private final SqsClient                   client;
-    private final EndpointKey<T>              key;
-    private final String                      consumerName;
-    private Function<String, String>          transform;
-    private final Serializer<T>               serializer;
-    private final SqsClientConfiguration      clientConfig;
-    private ExecutorService                   executor;
+    private final MessageCallback<T>                callback;
+    private final SqsClient                         client;
+    private final EndpointKey<T>                    key;
+    private final String                            consumerName;
+    private Function<String, String>                transform;
+    private final Serializer<T>                     serializer;
+    private final SqsClientConfiguration            clientConfig;
+    private ExecutorService                         executor;
     private final Batcher<MessageFuture<Boolean>>   ackBatcher;
     private final Batcher<MessageFuture<Boolean>>   renewBatcher;
     
@@ -55,19 +54,22 @@ class SqsMessageConsumer<T> implements MessageConsumer<T> {
             transform = new NoOpTransform();
         }
         
-        this.ackBatcher     = clientConfig.getBatchPolicy().create(new Function<List<MessageFuture<Boolean>>, Boolean>() {
-            public Boolean apply(List<MessageFuture<Boolean>> messages) {
-                SqsMessageConsumer.this.client.deleteMessages(messages);
-                return true;
-            }
-        });
+        ackBatcher = null;
+        renewBatcher = null;
         
-        this.renewBatcher     = clientConfig.getBatchPolicy().create(new Function<List<MessageFuture<Boolean>>, Boolean>() {
-            public Boolean apply(List<MessageFuture<Boolean>> messages) {
-                SqsMessageConsumer.this.client.renewMessages(messages);
-                return true;
-            }
-        });
+//        this.ackBatcher     = clientConfig.getBatchPolicy().create(new Function<List<MessageFuture<Boolean>>, Boolean>() {
+//            public Boolean apply(List<MessageFuture<Boolean>> messages) {
+//                SqsMessageConsumer.this.client.deleteMessages(messages);
+//                return true;
+//            }
+//        });
+//        
+//        this.renewBatcher     = clientConfig.getBatchPolicy().create(new Function<List<MessageFuture<Boolean>>, Boolean>() {
+//            public Boolean apply(List<MessageFuture<Boolean>> messages) {
+//                SqsMessageConsumer.this.client.renewMessages(messages);
+//                return true;
+//            }
+//        });
     }
     
     @Override

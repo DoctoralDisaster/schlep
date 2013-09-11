@@ -5,15 +5,15 @@ import com.netflix.schlep.EndpointKey;
 import com.netflix.schlep.SchlepModules;
 import com.netflix.schlep.config.ConfigurationReader;
 import com.netflix.schlep.exception.ProducerException;
-import com.netflix.schlep.producer.MessageProducer;
-import com.netflix.schlep.producer.MessageProducerFactory;
+import com.netflix.schlep.writer.MessageProducer;
+import com.netflix.schlep.writer.MessageWriterFactory;
 
 /**
  * Implementation of a message producer that sends messages to SQS
  * 
  * @author elandau
  */
-public class SqsMessageProducerProvider implements MessageProducerFactory {
+public class SqsMessageProducerProvider implements MessageWriterFactory {
     private final SqsClientFactory        clientFactory;
     private final SchlepModules           modules;
     @Inject

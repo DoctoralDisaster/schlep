@@ -11,7 +11,5 @@ public class SimSchlepModule extends SchlepPluginModule {
 
     @Override
     public void internalConfigure() {
-        this.registerMessageConsumerProvider(SimMessageConsumerProvider.class);
-        this.registerMessageProducerProvider(SimMessageProducerProvider.class);
     }
 }

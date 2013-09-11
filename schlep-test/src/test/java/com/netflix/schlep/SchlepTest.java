@@ -18,16 +18,16 @@ import com.google.inject.Injector;
 import com.google.inject.Scopes;
 import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.governator.lifecycle.LifecycleManager;
-import com.netflix.schlep.consumer.IncomingMessage;
-import com.netflix.schlep.consumer.MessageCallback;
-import com.netflix.schlep.consumer.MessageConsumer;
-import com.netflix.schlep.consumer.MessageConsumerFactory;
 import com.netflix.schlep.exception.ConsumerException;
 import com.netflix.schlep.guice.SchlepModule;
-import com.netflix.schlep.producer.MessageProducer;
-import com.netflix.schlep.producer.MessageProducerFactory;
+import com.netflix.schlep.reader.IncomingMessage;
+import com.netflix.schlep.reader.MessageCallback;
+import com.netflix.schlep.reader.MessageReader;
+import com.netflix.schlep.reader.MessageReaderFactory;
 import com.netflix.schlep.sim.SimSchlepModule;
 import com.netflix.schlep.sqs.SqsSchlepModule;
+import com.netflix.schlep.writer.MessageProducer;
+import com.netflix.schlep.writer.MessageWriterFactory;
 
 public class SchlepTest {
     private static final Logger LOG = LoggerFactory.getLogger(SchlepTest.class);
@@ -55,32 +55,32 @@ public class SchlepTest {
     }
     
     public static class MyService {
-        private final MessageConsumerFactory consumerProvider;
+        private final MessageReaderFactory consumerProvider;
         
-        private final MessageProducerFactory producerProvider;
+        private final MessageWriterFactory producerProvider;
         
-        private MessageConsumer<Message1> message1Consumer;
+        private MessageReader<Message1> message1Consumer;
         
-        private MessageConsumer<Message2> message2Consumer;
+        private MessageReader<Message2> message2Consumer;
         
         private MessageProducer<Message1> message1Producer;
         
         @Inject
-        public MyService(MessageConsumerFactory consumerProvider, MessageProducerFactory producerProvider) {
+        public MyService(MessageReaderFactory consumerProvider, MessageWriterFactory producerProvider) {
             this.consumerProvider = consumerProvider;
             this.producerProvider = producerProvider;
         }
         
         @PostConstruct 
         public void init() throws Exception {
-            message1Consumer = this.consumerProvider.createSubscriber(EndpointKey.of("foo", Message1.class), null, new MessageCallback<Message1>() {
+            message1Consumer = this.consumerProvider.createConsumer(EndpointKey.of("foo", Message1.class), null, new MessageCallback<Message1>() {
                 @Override
                 public void consume(IncomingMessage<Message1> message) throws ConsumerException {
                     LOG.info("Consume: " + message.getEntity());
                 }
             });
             
-            message2Consumer = this.consumerProvider.createSubscriber(EndpointKey.of("bar", Message2.class), null, new MessageCallback<Message2>() {
+            message2Consumer = this.consumerProvider.createConsumer(EndpointKey.of("bar", Message2.class), null, new MessageCallback<Message2>() {
                 @Override
                 public void consume(IncomingMessage<Message2> message) throws ConsumerException {
                     LOG.info("Consume: " + message.getEntity());

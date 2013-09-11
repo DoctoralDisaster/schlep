@@ -19,15 +19,15 @@ import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.schlep.EndpointKey;
-import com.netflix.schlep.consumer.IncomingMessage;
-import com.netflix.schlep.consumer.MessageCallback;
-import com.netflix.schlep.consumer.MessageConsumer;
-import com.netflix.schlep.consumer.MessageConsumerFactory;
 import com.netflix.schlep.exception.ConsumerException;
 import com.netflix.schlep.guice.SchlepModule;
-import com.netflix.schlep.producer.MessageProducer;
-import com.netflix.schlep.producer.MessageProducerFactory;
+import com.netflix.schlep.reader.IncomingMessage;
+import com.netflix.schlep.reader.MessageCallback;
+import com.netflix.schlep.reader.MessageReader;
+import com.netflix.schlep.reader.MessageReaderFactory;
 import com.netflix.schlep.sqs.SqsSchlepModule;
+import com.netflix.schlep.writer.MessageProducer;
+import com.netflix.schlep.writer.MessageWriterFactory;
 
 public class DispatcherTest {
     private static final Logger LOG = LoggerFactory.getLogger(DispatcherTest.class);
@@ -83,20 +83,20 @@ public class DispatcherTest {
      * @author elandau
      */
     public static class MyService {
-        private final MessageConsumerFactory consumerProvider;
-        private final MessageProducerFactory producerProvider;
-        private MessageConsumer<MyMessage> message1Consumer;
+        private final MessageReaderFactory consumerProvider;
+        private final MessageWriterFactory producerProvider;
+        private MessageReader<MyMessage> message1Consumer;
         private MessageProducer<MyMessage> message1Producer;
         
         @Inject
-        public MyService(MessageConsumerFactory consumerProvider, MessageProducerFactory producerProvider) {
+        public MyService(MessageReaderFactory consumerProvider, MessageWriterFactory producerProvider) {
             this.consumerProvider = consumerProvider;
             this.producerProvider = producerProvider;
         }
         
         @PostConstruct 
         public void init() throws Exception {
-            message1Consumer = this.consumerProvider.createSubscriber(EndpointKey.of("consumer1", MyMessage.class), null, new MessageCallback<MyMessage>() {
+            message1Consumer = this.consumerProvider.createConsumer(EndpointKey.of("consumer1", MyMessage.class), null, new MessageCallback<MyMessage>() {
                 @Override
                 public void consume(IncomingMessage<MyMessage> message) throws ConsumerException {
                     LOG.info("Consume: " + message.getEntity());
