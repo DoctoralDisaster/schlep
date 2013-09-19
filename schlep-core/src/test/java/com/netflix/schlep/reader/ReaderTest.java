@@ -42,7 +42,8 @@ public class ReaderTest {
                             LOG.info(message.getContents(String.class));
                             return message;
                         }
-                    }).subscribe(new Action1<IncomingMessage>() {
+                    })
+                    .subscribe(new Action1<IncomingMessage>() {
                         @Override
                         public void call(IncomingMessage message) {
                             message.ack();

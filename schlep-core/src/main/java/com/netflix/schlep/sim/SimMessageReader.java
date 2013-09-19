@@ -34,9 +34,10 @@ public class SimMessageReader implements MessageReader {
     private final long      interval;
     private final TimeUnit  intervalUnits;
     
-    private final AtomicLong    poolId  = new AtomicLong();
-    private final AtomicLong    counter = new AtomicLong();
-    private final AtomicBoolean paused  = new AtomicBoolean(false);
+    private final AtomicLong    poolId     = new AtomicLong();
+    private final AtomicLong    counter    = new AtomicLong();
+    private final AtomicLong    ackCounter = new AtomicLong();
+    private final AtomicBoolean paused     = new AtomicBoolean(false);
     
     public static class Builder {
         private String    id            = "sim";
@@ -100,18 +101,22 @@ public class SimMessageReader implements MessageReader {
                             for (int i = 0; i < batchSize; i++) {
                                 long id = counter.incrementAndGet();
                                 if (id > count) {
+                                    counter.decrementAndGet();
                                     return;
                                 }
                                     
                                 observer.onNext(new AbstractIncomingMessage<String>(id + "-" + id) {
                                     @Override
                                     public void ack() {
-                                        LOG.info("Ack: " + getContents(String.class));
+                                        ackCounter.incrementAndGet();
+                                        LOG.info("Ack: " + getContents(String.class) + " busy=" + (counter.get() - ackCounter.get()));
                                     }
                                     @Override
                                     public void nak() {
+                                        ackCounter.incrementAndGet();
                                         LOG.info("Nak: " + getContents(String.class));
                                     }
+                                    
                                     public String toString() {
                                         return "Sim[" + StringUtils.abbreviate(this.getContents(String.class), 32) + "]";
                                     }
@@ -127,7 +132,7 @@ public class SimMessageReader implements MessageReader {
                         Thread.sleep(intervalUnits.toMillis(interval));
                     } catch (Exception e) {
                         LOG.error("Interrupted", e);
-                        observer.onError(e);
+//                        observer.onError(e);    // Not sure we actually want to do this since it'll stop all consumers.
                         done.set(true);
                         return;
                     }
@@ -139,7 +144,6 @@ public class SimMessageReader implements MessageReader {
             @Override
             public void unsubscribe() {
                 done.set(true);
-                observer.onCompleted();
             }
         };
     }

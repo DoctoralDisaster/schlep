@@ -27,4 +27,10 @@ public interface MessageWriter {
      * @return
      */
     public Observable<Completion<OutgoingMessage>> write(OutgoingMessage message);
+    
+    /**
+     * Return a unique id for this message writer
+     * @return
+     */
+    public String getId();
 }

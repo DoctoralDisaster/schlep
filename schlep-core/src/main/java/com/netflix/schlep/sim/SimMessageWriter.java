@@ -85,8 +85,10 @@ public class SimMessageWriter implements MessageWriter {
     }
     
     private PublishSubject<Holder> subject;
+    private String id;
     
     private SimMessageWriter(final Builder builder) {
+        id = builder.id;
         subject = PublishSubject.create();
         
         subject
@@ -104,7 +106,6 @@ public class SimMessageWriter implements MessageWriter {
                 @Override
                 public void call(List<Holder> messages) {
                     // Introduce a delay
-                    LOG.info("Sending batch");
                     try {
                         Thread.sleep(builder.writeDelay);
                     } catch (InterruptedException e) {
@@ -143,5 +144,10 @@ public class SimMessageWriter implements MessageWriter {
     public void write(OutgoingMessage message, Observer<Completion<OutgoingMessage>> observer) {
         LOG.info("Add : " + message.getMessage());
         subject.onNext(new Holder(message, observer));
+    }
+
+    @Override
+    public String getId() {
+        return this.id;
     }
 }

@@ -125,3 +125,10 @@ project(':schlep-test') {
     }
 }
 
+project(':schlep-router') {
+    apply plugin: 'java'
+    dependencies {
+        compile  project(':schlep-core')
+        testCompile 'junit:junit:4.11'
+    }
+}

@@ -52,7 +52,7 @@ public class RouterTest {
         final MessageRouter  dispatcher = new MessageRouter(Observable.create(readerManager.acquire(READER_ID)));
 
         // Async, one thread per reply, 
-        dispatcher.addProcessor(MessageProcessors.async(new Action1<IncomingMessage>() {
+        dispatcher.addProcessor("id1", MessageProcessors.async(new Action1<IncomingMessage>() {
             @Override
             public void call(IncomingMessage message) {
                 try {
@@ -64,7 +64,7 @@ public class RouterTest {
         }, Schedulers.newThread()));
         
         // Sync, reply immediately
-        dispatcher.addProcessor(new MessageProcessor() {
+        dispatcher.addProcessor("id2", new MessageProcessor() {
             @Override
             public Observable<Completion<IncomingMessage>> process(IncomingMessage message) {
                 LOG.info("Sync : " + message);
@@ -75,7 +75,7 @@ public class RouterTest {
         // Funnel reply to writer
         final MessageWriter writer = SimMessageWriter.builder().build();
 
-        dispatcher.addProcessor(MessageProcessors.toWriter(writer));
+        dispatcher.addProcessor("id3", MessageProcessors.toWriter(writer));
         
         Thread.sleep(TimeUnit.MINUTES.toMillis(1));
     }

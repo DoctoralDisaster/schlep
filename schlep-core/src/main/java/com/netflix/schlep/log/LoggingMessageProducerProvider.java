@@ -33,6 +33,11 @@ public class LoggingMessageProducerProvider implements MessageWriterFactory {
                     OutgoingMessage message) {
                 return null;
             }
+
+            @Override
+            public String getId() {
+                return "logging";
+            }
         };
     }
 }
