@@ -108,7 +108,6 @@ project(':schlep-eventbus') {
         compile  'com.sun.jersey:jersey-server:1.17'
         compile  'org.eclipse.jetty:jetty-servlet:7.4.1.v20110513'
         compile  project(':schlep-core')
-        compile  project(':schlep-eventbus')
         compile  project(':schlep-sqs')
         testCompile 'junit:junit:4.11'
     }

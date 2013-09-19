@@ -1,27 +1,33 @@
-package com.netflix.schlep.config;
+package com.netflix.schlep.mapper.jackson;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.Version;
-import org.codehaus.jackson.map.AbstractTypeResolver;
 import org.codehaus.jackson.map.BeanPropertyDefinition;
 import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.JsonDeserializer;
+import org.codehaus.jackson.map.DeserializationContext;
 import org.codehaus.jackson.map.JsonSerializer;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.map.SerializerProvider;
 import org.codehaus.jackson.map.deser.BeanDeserializerBuilder;
 import org.codehaus.jackson.map.deser.BeanDeserializerModifier;
+import org.codehaus.jackson.map.deser.SettableBeanProperty;
+import org.codehaus.jackson.map.deser.std.StdDeserializer;
 import org.codehaus.jackson.map.introspect.AnnotatedMethod;
 import org.codehaus.jackson.map.introspect.BasicBeanDescription;
 import org.codehaus.jackson.map.module.SimpleModule;
 import org.codehaus.jackson.map.ser.BeanSerializerModifier;
 import org.codehaus.jackson.map.ser.std.BeanSerializerBase;
-import org.codehaus.jackson.type.JavaType;
+import org.codehaus.jackson.node.ObjectNode;
+import org.codehaus.jackson.node.TextNode;
 
 import com.google.common.collect.Sets;
 
@@ -34,11 +40,12 @@ import com.google.common.collect.Sets;
  */
 public class PolymorphicModule extends SimpleModule {
     private final Set<Class<?>> serializerClasses = Sets.newHashSet();
-    private final Set<Class<?>> deserializerClasses = Sets.newHashSet();
     
-    private static final String CLASS_NAME_FIELD   = "_class";
-    private static final String BUILDER_CLASS_NAME = "Builder";
-    
+    public static final String  CLASS_NAME_FIELD  = "_class";
+    public static final String  TYPE_NAME_FIELD  = "type";
+    public static final String  MODULE_NAME       = "PolymorphicModule";
+    public static final Version MODULE_VERSION    = new Version(1, 0, 0, null);
+
     /**
      * Decorator for a serializer that add a concrete class name
      * to the serialized JSON.
@@ -47,11 +54,23 @@ public class PolymorphicModule extends SimpleModule {
      *
      */
     class ClassTypeFieldSerializer extends BeanSerializerBase {
-        BeanSerializerBase src;
+        private BeanSerializerBase src;
         
-        protected ClassTypeFieldSerializer(BeanSerializerBase src) {
+        private final String typeField;
+        private final String typeValue;
+        
+        protected ClassTypeFieldSerializer(Class<?> iface, BeanSerializerBase src) {
             super(src);
             this.src = src;
+            
+            if (iface.getPackage().getName().equals(src.handledType().getPackage().getName())) {
+                this.typeField = TYPE_NAME_FIELD;
+                this.typeValue = src.handledType().getSimpleName();
+            }
+            else {
+                this.typeField = CLASS_NAME_FIELD;
+                this.typeValue = src.handledType().getCanonicalName();
+            }
         }
 
         @Override
@@ -59,19 +78,34 @@ public class PolymorphicModule extends SimpleModule {
                 SerializerProvider provider) throws IOException,
                 JsonGenerationException {
             jgen.writeStartObject();
-            jgen.writeStringField(CLASS_NAME_FIELD, bean.getClass().getCanonicalName()); 
+            jgen.writeStringField(this.typeField, this.typeValue); 
             serializeFields(bean, jgen, provider);
             jgen.writeEndObject();
         }
     }
     
     /**
-     * 
+     * Similar to ClassTypeFieldSerializer except for that there is no base
+     * serializer to wrap as the class has no properties
      * @author elandau
      *
      * @param <T>
      */
-    class NoFieldSerializer<T> extends JsonSerializer<T> {
+    class NoPropertiesSerializer<T> extends JsonSerializer<T> {
+        private final String typeField;
+        private final String typeValue;
+        
+        public NoPropertiesSerializer(Class<?> iface, Class<?> bean) {
+            if (iface.getPackage().getName().equals(bean.getPackage().getName())) {
+                this.typeField = TYPE_NAME_FIELD;
+                this.typeValue = bean.getSimpleName();
+            }
+            else {
+                this.typeField = CLASS_NAME_FIELD;
+                this.typeValue = bean.getCanonicalName();
+            }
+        }
+
         @Override
         public void serialize(Object value,
                 JsonGenerator jgen,
@@ -79,82 +113,72 @@ public class PolymorphicModule extends SimpleModule {
                 throws IOException,
                 JsonProcessingException {
             jgen.writeStartObject();
-            jgen.writeStringField(CLASS_NAME_FIELD, value.getClass().getCanonicalName()); 
+            jgen.writeStringField(this.typeField, this.typeValue); 
             jgen.writeEndObject();
+        }
+    }
+
+    /**
+     * Deserializer that looks for the class name in a polymorphic json tree of a 
+     * polymorphic type and deserializes to the correct type.
+     * 
+     * @author elandau
+     *
+     * @param <T>
+     */
+    class ClassTypeFieldDeserializer<T> extends StdDeserializer<T> {
+        private final String packageName;
+        
+        protected ClassTypeFieldDeserializer(Class<T> clazz) {
+            super(clazz);
+            
+            packageName = clazz.getPackage().getName();
+        }
+
+        @Override
+        public T deserialize(JsonParser jp, DeserializationContext ctxt)
+                throws IOException, JsonProcessingException {
+            String   className = "unknown";
+            
+            // Get the CLASS_NAME_FIELD from json
+            ObjectMapper mapper = (ObjectMapper) jp.getCodec();  
+            ObjectNode   root   = (ObjectNode  ) mapper.readTree(jp);  
+            TextNode     type   = (TextNode  )   root.get(TYPE_NAME_FIELD);
+            // Field describes the simple type
+            if (type != null) {
+                className = StringUtils.join(new String[]{packageName, type.asText()}, ".");
+                
+                // Discard the CLASS_NAME_FIELD so it doesn't interfere
+                root.remove(TYPE_NAME_FIELD);
+            }
+            // Field describes a full class name
+            else {
+                type            = (TextNode  )   root.get(CLASS_NAME_FIELD);
+                if (type == null)
+                    return null;
+                
+                className = type.asText();
+                
+                // Discard the CLASS_NAME_FIELD so it doesn't interfere
+                root.remove(CLASS_NAME_FIELD);
+            }
+            
+            // Try to determine the actual class
+            Class<?> clazz;
+            try {
+                clazz = Class.forName(className);
+            } catch (ClassNotFoundException e) {
+                throw new IOException("Failed to get class type for " + className, e);
+            }
+            
+            // Deserialize using the concrete type
+            return (T) mapper.readValue(root, clazz);
         }
     }
     
     @SuppressWarnings("unchecked")
     public PolymorphicModule() {
-        super("polymorphic", Version.unknownVersion());
-        
-//        for (final Class<?> clazz : this.classes) {
-//            this.addDeserializer(clazz, new JsonDeserializer() {
-//                @Override
-//                public Object deserialize(JsonParser jp,
-//                        DeserializationContext ctxt) throws IOException,
-//                        JsonProcessingException {
-//                    // Deserialize all the fields into a tree.  This probably 
-//                    // includes nested fields.  That's ok for now.
-//                    JsonNode nodes = jp.readValueAsTree();
-//                    
-//                    // Look for the class name to have been serialized in the JSON
-//                    JsonNode classField = nodes.findValue(CLASS_NAME_FIELD);
-//                    if (classField != null) {
-//                        try {
-//                            Class<?> clazz = Class.forName(classField.asText());
-//                            if (clazz != null) {
-//                                // Look for the Builder inner class
-//                                for (Class<?> builderClass : clazz.getClasses()) {
-//                                    if (builderClass.getSimpleName().equals(BUILDER_CLASS_NAME)) {
-//                                        Object builder = builderClass.newInstance(); 
-//                                        // Iterate 'with' methods and set values from JSON
-//                                        for (Method method : builderClass.getMethods()) {
-//                                            String methodName = method.getName();
-//                                            if (methodName.startsWith("with")) {
-//                                                methodName = StringUtils.substring(methodName, "with".length());
-//                                                methodName = StringUtils.uncapitalize(methodName);
-//                                                
-//                                                JsonNode node = nodes.get(methodName);
-//                                                // Found a value
-//                                                if (node != null) {
-//                                                    Class<?> paramType = method.getParameterTypes()[0];
-//                                                    if (paramType.equals(Integer.class) || paramType.equals(int.class)) {
-//                                                        method.invoke(builder, node.asInt());
-//                                                    }
-//                                                    else if (paramType.equals(Double.class) || paramType.equals(double.class)) {
-//                                                        method.invoke(builder, node.asDouble());
-//                                                    }
-//                                                    else if (paramType.equals(String.class)) {
-//                                                        method.invoke(builder, node.asText());
-//                                                    }
-//                                                    else if (paramType.equals(Long.class) || paramType.equals(long.class)) {
-//                                                        method.invoke(builder, node.asLong());
-//                                                    }
-//                                                    else if (paramType.equals(Boolean.class) || paramType.equals(boolean.class)) {
-//                                                        method.invoke(builder, node.asBoolean());
-//                                                    }
-//                                                    else {
-//                                                        System.out.println("With method: " + methodName);
-//                                                    }
-//                                                }
-//                                            }
-//                                        }
-//                                        
-//                                        Method buildMethod = builderClass.getMethod("build");
-//                                        return buildMethod.invoke(builder);
-//                                    }
-//                                }
-//                            }
-//                        } catch (Exception e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                    System.out.println("No serializer ");
-//                    return null;
-//                }
-//            });
-//        }
+        super(MODULE_NAME, MODULE_VERSION);
     }
     
     public void setupModule(SetupContext context) {
@@ -177,16 +201,16 @@ public class PolymorphicModule extends SimpleModule {
                     }
                 }
                 
-                // When reaching the polimorphic class added above add the proper
+                // When reaching the polymorphic class added above add the proper
                 // serializer wrapper to encode the type information
                 Class<?>[] interfaces = beanDesc.getBeanClass().getInterfaces();
                 if (interfaces.length == 1) {
                     synchronized (serializerClasses) {
                         if (serializerClasses.contains(interfaces[0])) {
                             if (serializer != null) 
-                                return new ClassTypeFieldSerializer((BeanSerializerBase) serializer);
+                                return new ClassTypeFieldSerializer(interfaces[0], (BeanSerializerBase) serializer);
                             else
-                                return new NoFieldSerializer();
+                                return new NoPropertiesSerializer(interfaces[0], beanDesc.getBeanClass());
                         }
                     }
                 }
@@ -195,33 +219,25 @@ public class PolymorphicModule extends SimpleModule {
         });
         
         context.addBeanDeserializerModifier(new BeanDeserializerModifier() {
-            public BeanDeserializerBuilder updateBuilder(DeserializationConfig config,
-                    BasicBeanDescription beanDesc, BeanDeserializerBuilder builder) {
-                System.out.println("addBeanDeserializerModifier " + beanDesc.getBeanClass());
+            @Override
+            public BeanDeserializerBuilder updateBuilder(DeserializationConfig config, BasicBeanDescription beanDesc, BeanDeserializerBuilder builder) {
+                /**
+                 * Treat every property that is an interface as policy driven.  Look for implementations
+                 * in the same package as the interface
+                 */
+                Iterator<SettableBeanProperty> beanPropertyIterator = builder.getProperties();
+                while (beanPropertyIterator.hasNext()) {
+                    SettableBeanProperty settableBeanProperty = beanPropertyIterator.next();
+                    // It's an interface!!
+                    if (settableBeanProperty.getType().isInterface()) {
+                        builder.addOrReplaceProperty(
+                            settableBeanProperty.withValueDeserializer(
+                                    new ClassTypeFieldDeserializer(settableBeanProperty.getType().getRawClass())),
+                            true);
+                    }
+                }
                 return builder;
             }
-
-            public JsonDeserializer<?> modifyDeserializer(DeserializationConfig config,
-                    BasicBeanDescription beanDesc, JsonDeserializer<?> deserializer) {
-                System.out.println("modifyDeserializer: " + beanDesc.getBeanClass());
-                return deserializer;
-            }
-        });
-        
-        context.addAbstractTypeResolver(new AbstractTypeResolver() {
-            public JavaType findTypeMapping(DeserializationConfig config, JavaType type) {
-                if (type.isInterface()) {
-                    System.out.println("findTypeMapping: " + type);
-                }
-                return null;
-            }
-            public JavaType resolveAbstractType(DeserializationConfig config, JavaType type) {
-                if (type.isInterface()) {
-                    System.out.println("resolveAbstractType: " + type);
-                    return config.getTypeFactory().constructFromCanonical(type.getRawClass() + "Impl");
-                }
-                return null;
-            }    
         });
     }
 }
