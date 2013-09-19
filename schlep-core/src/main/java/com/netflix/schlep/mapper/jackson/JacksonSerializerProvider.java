@@ -42,6 +42,8 @@ public class JacksonSerializerProvider implements SerializerProvider {
                 .withSetterVisibility(Visibility.NONE)
                 .withCreatorVisibility(Visibility.NONE)
                 .withIsGetterVisibility(Visibility.NONE));
+        
+        mapper.withModule(new PolymorphicModule());
     }
     
     @Override
