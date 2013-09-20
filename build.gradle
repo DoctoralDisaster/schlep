@@ -10,12 +10,13 @@ buildscript {
 }
 
 allprojects {
-    repositories { mavenCentral() }
+    repositories {
+        maven {
+            url 'https://repository.apache.org/content/groups/public'
+        }
+        mavenCentral()
+    }
 }
-
-apply plugin: 'idea'
-apply plugin: 'eclipse'
-apply plugin: 'osgi'
 
 apply from: file('gradle/convention.gradle')
 apply from: file('gradle/maven.gradle')
@@ -25,6 +26,11 @@ apply from: file('gradle/release.gradle')
 // apply from: file('gradle/netflix-oss.gradle')
 
 subprojects {
+    apply plugin: 'java'
+    apply plugin: 'idea'
+    apply plugin: 'eclipse'
+    apply plugin: 'osgi'
+
     group = "com.netflix.${githubProjectName}" // TEMPLATE: Set to organization of project
 
     dependencies {
@@ -54,14 +60,12 @@ subprojects {
 }
 
 project(':schlep-core') {
-    apply plugin: 'java'
     dependencies {
         testCompile 'junit:junit:4.11'
     }
 }
 
 project(':schlep-sns') {
-    apply plugin: 'java'
     dependencies {
         compile  project(':schlep-core')
         testCompile 'junit:junit:4.11'
@@ -69,7 +73,6 @@ project(':schlep-sns') {
 }
 
 project(':schlep-sqs') {
-    apply plugin: 'java'
     dependencies {
         compile  project(':schlep-core')
         compile 'com.amazonaws:aws-java-sdk:1.4.7'
@@ -78,15 +81,18 @@ project(':schlep-sqs') {
 }
 
 project(':schlep-kafka') {
-    apply plugin: 'java'
     dependencies {
         compile  project(':schlep-core')
+        compile('org.apache.kafka:kafka_2.8.0:0.8.0-beta1') {
+            exclude module: 'jms'
+            exclude module: 'jmxtools'
+            exclude module: 'jmxri'
+        }
         testCompile 'junit:junit:4.11'
     }
 }
 
 project(':schlep-astyanax-pri-queue') {
-    apply plugin: 'java'
     dependencies {
         compile  project(':schlep-core')
         testCompile 'junit:junit:4.11'
@@ -94,7 +100,6 @@ project(':schlep-astyanax-pri-queue') {
 }
 
 project(':schlep-examples') {
-    apply plugin: 'java'
     dependencies {
         compile  project(':schlep-core')
         testCompile 'junit:junit:4.11'
@@ -102,7 +107,6 @@ project(':schlep-examples') {
 }
 
 project(':schlep-eventbus') {
-    apply plugin: 'java'
     dependencies {
         compile  'javax.servlet:servlet-api:2.5'
         compile  'com.sun.jersey:jersey-server:1.17'
@@ -114,7 +118,6 @@ project(':schlep-eventbus') {
 }
 
 project(':schlep-test') {
-    apply plugin: 'java'
     dependencies {
         compile  project(':schlep-core')
         compile  project(':schlep-sns')
@@ -126,7 +129,6 @@ project(':schlep-test') {
 }
 
 project(':schlep-router') {
-    apply plugin: 'java'
     dependencies {
         compile  project(':schlep-core')
         testCompile 'junit:junit:4.11'
