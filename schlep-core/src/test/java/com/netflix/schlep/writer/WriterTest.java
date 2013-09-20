@@ -2,6 +2,7 @@ package com.netflix.schlep.writer;
 
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,7 @@ public class WriterTest {
     }
     
     @Test
+    @Ignore
     public void test() throws Exception {
         LOG.info("Starting test");
         Injector injector = Guice.createInjector(

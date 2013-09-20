@@ -1,2 +1,2 @@
 rootProject.name='schlep'
-include 'schlep-core', 'schlep-sns', 'schlep-sqs', 'schlep-astyanax-pri-queue', 'schlep-kafka', 'schlep-test', 'schlep-examples', 'schlep-eventbus', 'schlep-router'
+include 'schlep-core', 'schlep-kafka', 'schlep-router'

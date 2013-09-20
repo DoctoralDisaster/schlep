@@ -2,6 +2,7 @@ package com.netflix.schlep.router;
 
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +42,7 @@ public class SchlepTest {
     }
     
     @Test
+    @Ignore
     public void test() throws Exception {
         SchlepRouterService service = new SchlepRouterService();
         service.addSource(SimMessageReader.builder()

@@ -60,22 +60,22 @@ project(':schlep-core') {
     }
 }
 
-project(':schlep-sns') {
-    apply plugin: 'java'
-    dependencies {
-        compile  project(':schlep-core')
-        testCompile 'junit:junit:4.11'
-    }
-}
+//project(':schlep-sns') {
+//    apply plugin: 'java'
+//    dependencies {
+//        compile  project(':schlep-core')
+//        testCompile 'junit:junit:4.11'
+//   }
+//}
 
-project(':schlep-sqs') {
-    apply plugin: 'java'
-    dependencies {
-        compile  project(':schlep-core')
-        compile 'com.amazonaws:aws-java-sdk:1.4.7'
-        testCompile 'junit:junit:4.11'
-    }
-}
+//project(':schlep-sqs') {
+//    apply plugin: 'java'
+//    dependencies {
+//        compile  project(':schlep-core')
+//        compile 'com.amazonaws:aws-java-sdk:1.4.7'
+//         testCompile 'junit:junit:4.11'
+//     }
+// }
 
 project(':schlep-kafka') {
     apply plugin: 'java'
@@ -85,45 +85,45 @@ project(':schlep-kafka') {
     }
 }
 
-project(':schlep-astyanax-pri-queue') {
-    apply plugin: 'java'
-    dependencies {
-        compile  project(':schlep-core')
-        testCompile 'junit:junit:4.11'
-    }
-}
+//project(':schlep-astyanax-pri-queue') {
+//    apply plugin: 'java'
+//    dependencies {
+//        compile  project(':schlep-core')
+//        testCompile 'junit:junit:4.11'
+//    }
+//}
 
-project(':schlep-examples') {
-    apply plugin: 'java'
-    dependencies {
-        compile  project(':schlep-core')
-        testCompile 'junit:junit:4.11'
-    }
-}
+//project(':schlep-examples') {
+//    apply plugin: 'java'
+//    dependencies {
+//        compile  project(':schlep-core')
+//        testCompile 'junit:junit:4.11'
+//    }
+//}
 
-project(':schlep-eventbus') {
-    apply plugin: 'java'
-    dependencies {
-        compile  'javax.servlet:servlet-api:2.5'
-        compile  'com.sun.jersey:jersey-server:1.17'
-        compile  'org.eclipse.jetty:jetty-servlet:7.4.1.v20110513'
-        compile  project(':schlep-core')
-        compile  project(':schlep-sqs')
-        testCompile 'junit:junit:4.11'
-    }
-}
+//project(':schlep-eventbus') {
+//    apply plugin: 'java'
+//    dependencies {
+//        compile  'javax.servlet:servlet-api:2.5'
+//        compile  'com.sun.jersey:jersey-server:1.17'
+//        compile  'org.eclipse.jetty:jetty-servlet:7.4.1.v20110513'
+//        compile  project(':schlep-core')
+//        compile  project(':schlep-sqs')
+//        testCompile 'junit:junit:4.11'
+//    }
+//}
 
-project(':schlep-test') {
-    apply plugin: 'java'
-    dependencies {
-        compile  project(':schlep-core')
-        compile  project(':schlep-sns')
-        compile  project(':schlep-sqs')
-        compile  project(':schlep-kafka')
-        compile  project(':schlep-astyanax-pri-queue')
-        testCompile 'junit:junit:4.11'
-    }
-}
+//project(':schlep-test') {
+//    apply plugin: 'java'
+//    dependencies {
+//        compile  project(':schlep-core')
+//        compile  project(':schlep-sns')
+//        compile  project(':schlep-sqs')
+//        compile  project(':schlep-kafka')
+//        compile  project(':schlep-astyanax-pri-queue')
+//        testCompile 'junit:junit:4.11'
+//    }
+//}
 
 project(':schlep-router') {
     apply plugin: 'java'

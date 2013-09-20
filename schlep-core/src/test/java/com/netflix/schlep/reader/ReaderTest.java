@@ -2,6 +2,7 @@ package com.netflix.schlep.reader;
 
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +54,7 @@ public class ReaderTest {
     }
 
     @Test
+    @Ignore
     public void test() throws Exception {
         Injector injector = Guice.createInjector(new SchlepModule(),
                 new AbstractModule() {
