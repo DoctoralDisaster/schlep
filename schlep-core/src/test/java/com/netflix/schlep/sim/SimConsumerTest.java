@@ -3,6 +3,7 @@ package com.netflix.schlep.sim;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,7 @@ public class SimConsumerTest {
     private static final Logger LOG = LoggerFactory.getLogger(SimConsumerTest.class);
     
     @Test
+    @Ignore
     public void test() throws Exception {
         
         final MessageReader reader = SimMessageReader.builder()
@@ -74,6 +76,7 @@ public class SimConsumerTest {
     }
     
     @Test
+    @Ignore
     public void testBuffer() throws Exception {
         PublishSubject<Integer> subject = PublishSubject.create();
         subject.buffer(3, TimeUnit.SECONDS, 3)

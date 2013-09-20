@@ -2,6 +2,7 @@ package com.netflix.schlep.router;
 
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,7 @@ public class RouterTest {
     public static final String READER_ID = "ReaderTest";
     
     @Test
+    @Ignore
     public void test() throws Exception {
         MessageWriterManager writerManager = new MessageWriterManager();
         writerManager.add(
