@@ -10,13 +10,17 @@ buildscript {
 }
 
 allprojects {
-    repositories {
+    repositories { 
+        mavenCentral() 
         maven {
             url 'https://repository.apache.org/content/groups/public'
         }
-        mavenCentral()
     }
 }
+
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+apply plugin: 'osgi'
 
 apply from: file('gradle/convention.gradle')
 apply from: file('gradle/maven.gradle')
@@ -26,11 +30,6 @@ apply from: file('gradle/release.gradle')
 // apply from: file('gradle/netflix-oss.gradle')
 
 subprojects {
-    apply plugin: 'java'
-    apply plugin: 'idea'
-    apply plugin: 'eclipse'
-    apply plugin: 'osgi'
-
     group = "com.netflix.${githubProjectName}" // TEMPLATE: Set to organization of project
 
     dependencies {
@@ -60,27 +59,31 @@ subprojects {
 }
 
 project(':schlep-core') {
+    apply plugin: 'java'
     dependencies {
         testCompile 'junit:junit:4.11'
     }
 }
 
-project(':schlep-sns') {
-    dependencies {
-        compile  project(':schlep-core')
-        testCompile 'junit:junit:4.11'
-    }
-}
+//project(':schlep-sns') {
+//    apply plugin: 'java'
+//    dependencies {
+//        compile  project(':schlep-core')
+//        testCompile 'junit:junit:4.11'
+//   }
+//}
 
-project(':schlep-sqs') {
-    dependencies {
-        compile  project(':schlep-core')
-        compile 'com.amazonaws:aws-java-sdk:1.4.7'
-        testCompile 'junit:junit:4.11'
-    }
-}
+//project(':schlep-sqs') {
+//    apply plugin: 'java'
+//    dependencies {
+//        compile  project(':schlep-core')
+//        compile 'com.amazonaws:aws-java-sdk:1.4.7'
+//         testCompile 'junit:junit:4.11'
+//     }
+// }
 
 project(':schlep-kafka') {
+    apply plugin: 'scala'
     dependencies {
         compile  project(':schlep-core')
         compile('org.apache.kafka:kafka_2.8.0:0.8.0-beta1') {
@@ -88,47 +91,57 @@ project(':schlep-kafka') {
             exclude module: 'jmxtools'
             exclude module: 'jmxri'
         }
+        scalaTools 'org.scala-lang:scala-compiler:2.8.0'
+        scalaTools 'org.scala-lang:scala-library:2.8.0'
+
         testCompile 'junit:junit:4.11'
+        testCompile 'org.scalatest:scalatest:1.2'
+        testCompile 'commons-io:commons-io:2.4'
     }
 }
 
-project(':schlep-astyanax-pri-queue') {
-    dependencies {
-        compile  project(':schlep-core')
-        testCompile 'junit:junit:4.11'
-    }
-}
+//project(':schlep-astyanax-pri-queue') {
+//    apply plugin: 'java'
+//    dependencies {
+//        compile  project(':schlep-core')
+//        testCompile 'junit:junit:4.11'
+//    }
+//}
 
-project(':schlep-examples') {
-    dependencies {
-        compile  project(':schlep-core')
-        testCompile 'junit:junit:4.11'
-    }
-}
+//project(':schlep-examples') {
+//    apply plugin: 'java'
+//    dependencies {
+//        compile  project(':schlep-core')
+//        testCompile 'junit:junit:4.11'
+//    }
+//}
 
-project(':schlep-eventbus') {
-    dependencies {
-        compile  'javax.servlet:servlet-api:2.5'
-        compile  'com.sun.jersey:jersey-server:1.17'
-        compile  'org.eclipse.jetty:jetty-servlet:7.4.1.v20110513'
-        compile  project(':schlep-core')
-        compile  project(':schlep-sqs')
-        testCompile 'junit:junit:4.11'
-    }
-}
+//project(':schlep-eventbus') {
+//    apply plugin: 'java'
+//    dependencies {
+//        compile  'javax.servlet:servlet-api:2.5'
+//        compile  'com.sun.jersey:jersey-server:1.17'
+//        compile  'org.eclipse.jetty:jetty-servlet:7.4.1.v20110513'
+//        compile  project(':schlep-core')
+//        compile  project(':schlep-sqs')
+//        testCompile 'junit:junit:4.11'
+//    }
+//}
 
-project(':schlep-test') {
-    dependencies {
-        compile  project(':schlep-core')
-        compile  project(':schlep-sns')
-        compile  project(':schlep-sqs')
-        compile  project(':schlep-kafka')
-        compile  project(':schlep-astyanax-pri-queue')
-        testCompile 'junit:junit:4.11'
-    }
-}
+//project(':schlep-test') {
+//    apply plugin: 'java'
+//    dependencies {
+//        compile  project(':schlep-core')
+//        compile  project(':schlep-sns')
+//        compile  project(':schlep-sqs')
+//        compile  project(':schlep-kafka')
+//        compile  project(':schlep-astyanax-pri-queue')
+//        testCompile 'junit:junit:4.11'
+//    }
+//}
 
 project(':schlep-router') {
+    apply plugin: 'java'
     dependencies {
         compile  project(':schlep-core')
         testCompile 'junit:junit:4.11'

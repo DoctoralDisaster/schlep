@@ -1,9 +1,12 @@
 package com.netflix.schlep.kafka;
 
+import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netflix.schlep.reader.AbstractIncomingMessage;
 import com.netflix.schlep.reader.IncomingMessage;
 import com.netflix.schlep.reader.MessageReader;
+import com.netflix.servo.annotations.DataSourceType;
+import com.netflix.servo.annotations.Monitor;
 import kafka.consumer.ConsumerConfig;
 import kafka.consumer.ConsumerIterator;
 import kafka.consumer.KafkaStream;
@@ -19,9 +22,9 @@ import rx.Subscription;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -30,67 +33,47 @@ public class KafkaMessageReader<V> implements MessageReader {
 
     private final String topic;
     private final ConsumerConfig config;
-    private final int batchSize;
     private final Decoder<V> decoder;
-    private final ConsumerConnector consumer;
+    private final int batchSize;
+    private final long timeoutMs;
+    private ConsumerConnector consumer;
 
-    private final AtomicLong poolId     = new AtomicLong();
+    private final AtomicLong    poolId     = new AtomicLong();
     private final AtomicLong    counter    = new AtomicLong();
     private final AtomicLong    ackCounter = new AtomicLong();
-    private final AtomicBoolean paused = new AtomicBoolean(false);
-    private final CountDownLatch latch;
+    private final AtomicBoolean paused     = new AtomicBoolean(false);
+    private final ResettableCountDownLatch latch = new ResettableCountDownLatch();
+    final ExecutorService committer  = Executors.newSingleThreadExecutor(
+            new ThreadFactoryBuilder()
+                    .setNameFormat("KafkaMessageReader-ConsumerCommitter")
+                    .build());
 
-    public static class Builder<V> {
-        private String topic;
-        private int batchSize;
-        private ConsumerConfig config;
-        private Decoder<V> decoder;
+    public KafkaMessageReader(
+            String topic,
+            ConsumerConfig config,
+            int batchSize,
+            long timeoutMs,
+            Decoder<V> decoder) {
+        Preconditions.checkArgument(config.autoCommitEnable() == false, "autocommit should be disabled");
 
-        public Builder withTopic(String topic) {
-            this.topic = topic;
-            return this;
-        }
-
-        public Builder withBatchSize(int batchSize) {
-            this.batchSize = batchSize;
-            return this;
-        }
-
-        public Builder withConsumerConfig(ConsumerConfig config) {
-            this.config = config;
-            return this;
-        }
-
-        public Builder withDecoder(Decoder<V> decoder) {
-            this.decoder = decoder;
-            return this;
-        }
-
-        public KafkaMessageReader build() {
-            return new KafkaMessageReader(this);
-        }
+        this.topic = topic;
+        this.config = config;
+        this.batchSize = batchSize;
+        this.timeoutMs = timeoutMs;
+        this.decoder = decoder;
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
+    @Monitor(type = DataSourceType.COUNTER, name = "unackedMessageCommitted")
+    private long unackedMessageCommitted = 0;
 
-    public KafkaMessageReader(Builder builder) {
-        this.topic = builder.topic;
-        this.config = builder.config;
-        this.batchSize = builder.batchSize;
-        this.decoder = builder.decoder;
-
-        latch = new CountDownLatch(batchSize);
-        Map<String, Integer> topicCountMap = new HashMap<String, Integer>();
-        topicCountMap.put(topic, new Integer(1));
-        consumer = kafka.consumer.Consumer.createJavaConsumerConnector(config);
-    }
+    public long getUnackedMessageCommitted() { return unackedMessageCommitted; }
 
     @Override
     public Subscription call(final Observer<IncomingMessage> observer) {
+        consumer = kafka.consumer.Consumer.createJavaConsumerConnector(config);
+
         Map<String, Integer> topicCountMap = new HashMap<String, Integer>();
-        topicCountMap.put(topic, 1);
+        topicCountMap.put(topic, 1); // only one thread
         Map<String, List<KafkaStream<byte[], byte[]>>> consumerMap = consumer.createMessageStreams(topicCountMap);
         final ConsumerIterator<byte[], byte[]> it = consumerMap.get(topic).get(0).iterator();
 
@@ -98,6 +81,8 @@ public class KafkaMessageReader<V> implements MessageReader {
                 new ThreadFactoryBuilder()
                         .setNameFormat("KafkaMessageReader-" + poolId.incrementAndGet() + "-" + getId() + "-%d")
                         .build());
+
+        latch.reset(batchSize);
 
         executor.submit(new Runnable() {
             @Override
@@ -113,13 +98,15 @@ public class KafkaMessageReader<V> implements MessageReader {
                     }
 
                     try {
-                        counter.incrementAndGet();
+                        final MessageAndMetadata<byte[], byte[]> m = it.next();
 
-                        observer.onNext(new AbstractIncomingMessage<MessageAndMetadata<byte[], byte[]>>(it.next()) {
+                        observer.onNext(new AbstractIncomingMessage<MessageAndMetadata<byte[], byte[]>>(m) {
                             @Override
                             public void ack() {
+                                latch.countDown();
                                 ackCounter.incrementAndGet();
                             }
+
                             @Override
                             public void nak() {
                                 //
@@ -134,11 +121,45 @@ public class KafkaMessageReader<V> implements MessageReader {
                                 return (T) decoder.fromBytes(entity.message());
                             }
                         });
+
+                        if (counter.incrementAndGet() % batchSize == 0) {
+                            latch.await(timeoutMs, TimeUnit.MILLISECONDS);
+                            if (latch.getCount() > 0) {
+                                LOG.error("unacked messages skipped: " + latch.getCount());
+                                unackedMessageCommitted += latch.getCount();
+                            }
+                            committer.submit(new Runnable() {
+                                @Override
+                                public void run() {
+                                    consumer.commitOffsets();
+                                }
+                            });
+
+                            latch.reset(batchSize);
+                        }
                     } catch (Exception e) {
                         LOG.error("Interrupted", e);
-//                        observer.onError(e);    // Not sure we actually want to do this since it'll stop all consumers.
+                        //observer.onError(e);    // Not sure we actually want to do this since it'll stop all consumers.
                         return;
                     }
+                }
+
+                if (counter.get() - ackCounter.get() > 0) {
+                    try {
+                        Thread.sleep(timeoutMs);
+                    } catch (InterruptedException e) {
+                        LOG.error("Interrupted", e);
+                    }
+                    if (counter.get() - ackCounter.get() > 0) {
+                        LOG.error("unacked messages skipped: " + (counter.get() - ackCounter.get()));
+                        unackedMessageCommitted += latch.getCount();
+                    }
+                    committer.submit(new Runnable() {
+                        @Override
+                        public void run() {
+                            consumer.commitOffsets();
+                        }
+                    });
                 }
             }
         });
