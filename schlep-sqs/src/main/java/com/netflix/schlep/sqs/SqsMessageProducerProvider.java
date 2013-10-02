@@ -3,8 +3,8 @@ package com.netflix.schlep.sqs;
 import com.google.inject.Inject;
 import com.netflix.schlep.EndpointKey;
 import com.netflix.schlep.SchlepModules;
-import com.netflix.schlep.config.ConfigurationReader;
 import com.netflix.schlep.exception.ProducerException;
+import com.netflix.schlep.serializer.Mapper;
 import com.netflix.schlep.writer.MessageProducer;
 import com.netflix.schlep.writer.MessageWriterFactory;
 
@@ -26,7 +26,7 @@ public class SqsMessageProducerProvider implements MessageWriterFactory {
     }
     
     @Override
-    public <T> MessageProducer<T> createProducer(EndpointKey<T> key, ConfigurationReader reader) throws ProducerException {
+    public <T> MessageProducer<T> createProducer(EndpointKey<T> key, Mapper reader) throws ProducerException {
         try {
             SqsClientConfiguration config = reader.create(SqsClientConfiguration.class);
             SqsClient              client = clientFactory.create(config);

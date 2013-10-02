@@ -1,12 +1,24 @@
 package com.netflix.schlep.writer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import rx.util.functions.Func2;
+
+import com.netflix.schlep.consumer.IncomingMessage;
 
 public class Completion<T> {
-    private final static Logger LOG = LoggerFactory.getLogger(Completion.class);
-    
     private final T value;
+
+    public static class SelectFirst implements Func2<Completion<IncomingMessage>, Completion<IncomingMessage>, Completion<IncomingMessage>> {
+        @Override
+        public Completion<IncomingMessage> call(Completion<IncomingMessage> reply1, Completion<IncomingMessage> reply2) {
+            return reply1;
+        }
+        
+        public static SelectFirst instance = new SelectFirst();
+        public static SelectFirst get() {
+            return instance;
+        }
+    }
+
 
     public Completion(T value) {
         this.value = value;

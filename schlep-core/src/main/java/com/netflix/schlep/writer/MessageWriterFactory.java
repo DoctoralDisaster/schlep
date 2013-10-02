@@ -1,7 +1,7 @@
 package com.netflix.schlep.writer;
 
-import com.netflix.schlep.config.ConfigurationReader;
 import com.netflix.schlep.exception.ProducerException;
+import com.netflix.schlep.serializer.Mapper;
 
 /**
  * Main entrypoint for attaining a producer used to send messages to 
@@ -18,5 +18,5 @@ public interface MessageWriterFactory {
      * @return
      * @throws Exception 
      */
-    MessageWriter createProducer(String id, ConfigurationReader mapper) throws ProducerException;
+    MessageWriter createProducer(String id, Mapper mapper) throws ProducerException;
 }

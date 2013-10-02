@@ -9,11 +9,11 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.netflix.schlep.consumer.Act;
+import com.netflix.schlep.consumer.IncomingMessage;
 import com.netflix.schlep.filter.MessageFilter;
 import com.netflix.schlep.log.LoggingMessageObservable;
-import com.netflix.schlep.reader.Act;
-import com.netflix.schlep.reader.IncomingMessage;
-import com.netflix.schlep.sim.SimMessageReader;
+import com.netflix.schlep.sim.SimMessageConsumer;
 
 import rx.Observable;
 import rx.Observer;
@@ -65,7 +65,7 @@ public class RxTest {
     @Test
     public void test() throws Exception {
         
-        Observable<IncomingMessage> stream = SimMessageReader.get("test", 1, 10, 100, TimeUnit.MILLISECONDS);
+        Observable<IncomingMessage> stream = SimMessageConsumer.get("test", 1, 10, 100, TimeUnit.MILLISECONDS);
         
         Observable.create(MessageFilter.filter(stream, MessageFilter.<String>random(0.5)))
 //            (MessageFilter.<String>random(0.5))
@@ -146,7 +146,7 @@ public class RxTest {
                 createRouter(5)
                 );
         
-        Observable<IncomingMessage> stream = SimMessageReader.get("test", 1, 1000, 10, TimeUnit.MILLISECONDS);
+        Observable<IncomingMessage> stream = SimMessageConsumer.get("test", 1, 1000, 10, TimeUnit.MILLISECONDS);
 
         stream
             .map(new Func1<IncomingMessage, Observable<Act<String>>>() {

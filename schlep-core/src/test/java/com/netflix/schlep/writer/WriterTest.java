@@ -32,7 +32,7 @@ public class WriterTest {
         private MessageWriter   writer;
         
         @Inject
-        public MyService(MessageWriterManager manager) {
+        public MyService(MessageProducerRegistry manager) {
             this.writer = manager.acquire(WRITER_ID);
             
             for (int i = 0; i < 10; i++) {
@@ -65,7 +65,7 @@ public class WriterTest {
             );
         
         LOG.info("Started LifecycleManager");
-        MessageWriterManager writerManager = injector.getInstance(MessageWriterManager.class);
+        MessageProducerRegistry writerManager = injector.getInstance(MessageProducerRegistry.class);
         writerManager.add(
                 WRITER_ID, 
                 Suppliers.<MessageWriter>ofInstance(SimMessageWriter.builder()

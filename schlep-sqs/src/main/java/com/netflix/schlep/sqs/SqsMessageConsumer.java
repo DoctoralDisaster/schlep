@@ -15,15 +15,15 @@ import com.google.common.base.Function;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netflix.schlep.EndpointKey;
+import com.netflix.schlep.consumer.MessageConsumer;
 import com.netflix.schlep.exception.ConsumerException;
 import com.netflix.schlep.mapper.Serializer;
-import com.netflix.schlep.reader.MessageReader;
 import com.netflix.schlep.sqs.transform.FromBase64Transform;
 import com.netflix.schlep.sqs.transform.NoOpTransform;
 import com.netflix.schlep.util.UnstoppableStopwatch;
 import com.netflix.util.batch.Batcher;
 
-class SqsMessageConsumer implements MessageReader {
+class SqsMessageConsumer implements MessageConsumer {
     private static final Logger LOG = LoggerFactory.getLogger(SqsMessageConsumer.class);
     
     private static final long THROTTLE_TIMESPAN = 1000;

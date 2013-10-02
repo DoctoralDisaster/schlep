@@ -8,10 +8,6 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.netflix.schlep.mapper.SerializerProvider;
-import com.netflix.util.batch.BatchingPolicy;
-import com.netflix.util.batch.InlineNoBatchPolicy;
-import com.netflix.util.retry.NoRetryPolicy;
-import com.netflix.util.retry.RetryPolicy;
 
 /**
  * Implementation of SQS configuration from an AbstractConfiguration
@@ -49,8 +45,8 @@ public class PropertiesSqsClientConfiguration implements SqsClientConfiguration 
     public static final int DEFAULT_SEND_BATCH_MAX_TOTAL_BYTES = 65536;
     public static final int DEFAULT_THREAD_COUNT               = 1;
 	public static final boolean DEFAULT_ENABLE_BASE64          = true;
-	public static final BatchingPolicy DEFAULT_BATCH_STRATEGY  = new InlineNoBatchPolicy();
-    public static final RetryPolicy DEFAULT_RETRY_POLICY       = new NoRetryPolicy();
+//	public static final BatchingPolicy DEFAULT_BATCH_STRATEGY  = new InlineNoBatchPolicy();
+//    public static final RetryPolicy DEFAULT_RETRY_POLICY       = new NoRetryPolicy();
             
     private final String queueName;
     
@@ -61,10 +57,10 @@ public class PropertiesSqsClientConfiguration implements SqsClientConfiguration 
     private final int maxRetries            ;
     private final int visibilityTimeout     ;
     private final String endPoint;
-    private final RetryPolicy retryPolicy = DEFAULT_RETRY_POLICY;
+//    private final RetryPolicy retryPolicy = DEFAULT_RETRY_POLICY;
     private final boolean enableBase64;
     private final int workerThreadCount;
-    private final BatchingPolicy batchPolicy;
+//    private final BatchingPolicy batchPolicy;
     
     @Inject
     public PropertiesSqsClientConfiguration(
@@ -96,7 +92,7 @@ public class PropertiesSqsClientConfiguration implements SqsClientConfiguration 
                         String.format(PROP_QUEUE_NAME, configName)));
                 
 //        this.retryPolicy   = retryPolicyFactories.get(retryType).create(config.subset(String.format(PROP_RETRY_PROPERTIES, configName)));
-        this.batchPolicy = this.DEFAULT_BATCH_STRATEGY;
+//        this.batchPolicy = this.DEFAULT_BATCH_STRATEGY;
     }
     
     @Override
@@ -134,10 +130,10 @@ public class PropertiesSqsClientConfiguration implements SqsClientConfiguration 
         return this.visibilityTimeout;
     }
 
-    @Override
-    public RetryPolicy getRetryPolicy() {
-        return this.retryPolicy;
-    }
+//    @Override
+//    public RetryPolicy getRetryPolicy() {
+//        return this.retryPolicy;
+//    }
     
     @Override
     public boolean getEnable64Encoding() {
@@ -154,10 +150,10 @@ public class PropertiesSqsClientConfiguration implements SqsClientConfiguration 
         return this.terminateTimeoutInMillis;
     }
 
-    @Override
-    public BatchingPolicy getBatchPolicy() {
-        return this.batchPolicy;
-    }
+//    @Override
+//    public BatchingPolicy getBatchPolicy() {
+//        return this.batchPolicy;
+//    }
 
     @Override
     public int getMaxReadBatchSize() {

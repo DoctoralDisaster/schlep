@@ -19,12 +19,12 @@ import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.netflix.schlep.EndpointKey;
+import com.netflix.schlep.consumer.IncomingMessage;
+import com.netflix.schlep.consumer.MessageCallback;
+import com.netflix.schlep.consumer.MessageConsumer;
+import com.netflix.schlep.consumer.MessageConsumerFactory;
 import com.netflix.schlep.exception.ConsumerException;
 import com.netflix.schlep.guice.SchlepModule;
-import com.netflix.schlep.reader.IncomingMessage;
-import com.netflix.schlep.reader.MessageCallback;
-import com.netflix.schlep.reader.MessageReader;
-import com.netflix.schlep.reader.MessageReaderFactory;
 import com.netflix.schlep.sqs.SqsSchlepModule;
 import com.netflix.schlep.writer.MessageProducer;
 import com.netflix.schlep.writer.MessageWriterFactory;
@@ -83,13 +83,13 @@ public class DispatcherTest {
      * @author elandau
      */
     public static class MyService {
-        private final MessageReaderFactory consumerProvider;
+        private final MessageConsumerFactory consumerProvider;
         private final MessageWriterFactory producerProvider;
-        private MessageReader<MyMessage> message1Consumer;
+        private MessageConsumer<MyMessage> message1Consumer;
         private MessageProducer<MyMessage> message1Producer;
         
         @Inject
-        public MyService(MessageReaderFactory consumerProvider, MessageWriterFactory producerProvider) {
+        public MyService(MessageConsumerFactory consumerProvider, MessageWriterFactory producerProvider) {
             this.consumerProvider = consumerProvider;
             this.producerProvider = producerProvider;
         }

@@ -9,26 +9,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import rx.Observable;
-import rx.Observer;
-import rx.Subscription;
 import rx.concurrency.Schedulers;
 import rx.subjects.PublishSubject;
-import rx.subscriptions.BooleanSubscription;
 import rx.util.functions.Action1;
-import rx.util.functions.Func1;
 
-import com.google.common.base.Supplier;
-import com.netflix.schlep.processor.MessageProcessor;
+import com.netflix.schlep.consumer.IncomingMessage;
+import com.netflix.schlep.consumer.MessageConsumer;
+import com.netflix.schlep.processor.MessageHandler;
 import com.netflix.schlep.processor.MessageProcessors;
-import com.netflix.schlep.reader.IncomingMessage;
-import com.netflix.schlep.reader.MessageReader;
-import com.netflix.schlep.reader.MessageReaderManager;
-import com.netflix.schlep.router.MessageRouter;
-import com.netflix.schlep.sim.SimMessageWriter.Holder;
-import com.netflix.schlep.writer.MessageWriterManager;
 import com.netflix.schlep.writer.MessageWriter;
 import com.netflix.schlep.writer.Completion;
-import com.netflix.schlep.writer.OutgoingMessage;
 
 public class SimConsumerTest {
     private static final Logger LOG = LoggerFactory.getLogger(SimConsumerTest.class);
@@ -37,42 +27,42 @@ public class SimConsumerTest {
     @Ignore
     public void test() throws Exception {
         
-        final MessageReader reader = SimMessageReader.builder()
-                .withId("test")
-                .withBatchSize(1)
-                .withMaxCount(10)
-                .withInterval(500, TimeUnit.MILLISECONDS)
-                .build();
-                
-        final MessageRouter  dispatcher = new MessageRouter(Observable.create(reader));
-        
-        // Async, one thread per reply, 
-        dispatcher.addProcessor("id1", MessageProcessors.async(new Action1<IncomingMessage>() {
-            @Override
-            public void call(IncomingMessage message) {
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                }
-                LOG.info("Async : " + message);
-            }
-        }, Schedulers.newThread()));
-        
-        // Sync, reply immediately
-        dispatcher.addProcessor("id2", new MessageProcessor() {
-            @Override
-            public Observable<Completion<IncomingMessage>> process(IncomingMessage message) {
-                LOG.info("Sync : " + message);
-                return Observable.just(Completion.from(message));
-            }
-        });
-        
-        // Funnel reply to writer
-        final MessageWriter writer = SimMessageWriter.builder().build();
-
-        dispatcher.addProcessor("id3", MessageProcessors.toWriter(writer));
-        
-        Thread.sleep(TimeUnit.MINUTES.toMillis(1));
+//        final MessageConsumer reader = SimMessageConsumer.builder()
+//                .withId("test")
+//                .withBatchSize(1)
+//                .withMaxCount(10)
+//                .withThrottle(500, TimeUnit.MILLISECONDS)
+//                .build();
+//                
+//        final MessageRouter  dispatcher = new MessageRouter(Observable.create(reader));
+//        
+//        // Async, one thread per reply, 
+//        dispatcher.addProcessor("id1", MessageProcessors.async(new Action1<IncomingMessage>() {
+//            @Override
+//            public void call(IncomingMessage message) {
+//                try {
+//                    Thread.sleep(10);
+//                } catch (InterruptedException e) {
+//                }
+//                LOG.info("Async : " + message);
+//            }
+//        }, Schedulers.newThread()));
+//        
+//        // Sync, reply immediately
+//        dispatcher.addProcessor("id2", new MessageHandler() {
+//            @Override
+//            public Observable<Completion<IncomingMessage>> call(IncomingMessage message) {
+//                LOG.info("Sync : " + message);
+//                return Observable.just(Completion.from(message));
+//            }
+//        });
+//        
+//        // Funnel reply to writer
+//        final MessageWriter writer = SimMessageWriter.builder().build();
+//
+//        dispatcher.addProcessor("id3", MessageProcessors.toWriter(writer));
+//        
+//        Thread.sleep(TimeUnit.MINUTES.toMillis(1));
     }
     
     @Test

@@ -7,7 +7,7 @@ import rx.Observable;
 import rx.Observer;
 
 import com.google.inject.Inject;
-import com.netflix.schlep.config.ConfigurationReader;
+import com.netflix.schlep.serializer.Mapper;
 import com.netflix.schlep.writer.Completion;
 import com.netflix.schlep.writer.MessageWriter;
 import com.netflix.schlep.writer.MessageWriterFactory;
@@ -21,7 +21,7 @@ public class LoggingMessageProducerProvider implements MessageWriterFactory {
     }
     
     @Override
-    public MessageWriter createProducer(final String id, final ConfigurationReader mapper) {
+    public MessageWriter createProducer(final String id, final Mapper mapper) {
         return new MessageWriter() {
             @Override
             public void write(OutgoingMessage message,

@@ -3,7 +3,7 @@ package com.netflix.schlep.log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.netflix.schlep.reader.IncomingMessage;
+import com.netflix.schlep.consumer.IncomingMessage;
 
 import rx.Observer;
 

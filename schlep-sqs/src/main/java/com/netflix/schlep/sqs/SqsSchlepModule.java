@@ -1,8 +1,8 @@
 package com.netflix.schlep.sqs;
 
-import com.netflix.schlep.guice.SchlepPluginModule;
+import com.netflix.schlep.guice.SchlepPlugin;
 
-public class SqsSchlepModule extends SchlepPluginModule {
+public class SqsSchlepModule extends SchlepPlugin {
     public static final String NAME = "sqs";
     
     public SqsSchlepModule() {
@@ -11,7 +11,7 @@ public class SqsSchlepModule extends SchlepPluginModule {
 
     @Override
     public void internalConfigure() {
-        this.registerMessageConsumerProvider(SqsMessageConsumerProvider.class);
+        this.registerConsumerType(SqsMessageConsumerProvider.class);
         this.registerMessageProducerProvider(SqsMessageProducerProvider.class);
     }
 }

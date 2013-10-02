@@ -1,6 +1,6 @@
 package com.netflix.schlep.processor;
 
-import com.netflix.schlep.reader.IncomingMessage;
+import com.netflix.schlep.consumer.IncomingMessage;
 import com.netflix.schlep.writer.Completion;
 
 import rx.Observable;
@@ -11,7 +11,7 @@ import rx.subscriptions.BooleanSubscription;
 import rx.util.functions.Action1;
 import rx.util.functions.Func1;
 
-public class AsyncMessageProcessor implements MessageProcessor {
+public class AsyncMessageProcessor implements MessageHandler {
     
     private final Action1<IncomingMessage> action;
     private final Scheduler scheduler;
@@ -22,7 +22,7 @@ public class AsyncMessageProcessor implements MessageProcessor {
     }
     
     @Override
-    public Observable<Completion<IncomingMessage>> process(final IncomingMessage message) {
+    public Observable<Completion<IncomingMessage>> call(final IncomingMessage message) {
         return Observable.create(new Func1<Observer<Completion<IncomingMessage>>, Subscription>() {
             @Override
             public Subscription call(final Observer<Completion<IncomingMessage>> observer) {

@@ -2,18 +2,18 @@ package com.netflix.schlep.sqs;
 
 import com.google.inject.Inject;
 import com.netflix.schlep.EndpointKey;
-import com.netflix.schlep.config.ConfigurationReader;
+import com.netflix.schlep.consumer.MessageCallback;
+import com.netflix.schlep.consumer.MessageConsumer;
+import com.netflix.schlep.consumer.MessageConsumerFactory;
 import com.netflix.schlep.exception.ConsumerException;
-import com.netflix.schlep.reader.MessageCallback;
-import com.netflix.schlep.reader.MessageReader;
-import com.netflix.schlep.reader.MessageReaderFactory;
+import com.netflix.schlep.serializer.Mapper;
 
 /**
  * Implementation of a consumer that reads messages from an SQS queue
  * 
  * @author elandau
  */
-public class SqsMessageConsumerProvider implements MessageReaderFactory {
+public class SqsMessageConsumerProvider implements MessageConsumerFactory {
     private SqsClientFactory clientFactory;
     
     @Inject
@@ -24,7 +24,7 @@ public class SqsMessageConsumerProvider implements MessageReaderFactory {
     }
     
     @Override
-    public <T> MessageReader<T> createConsumer(EndpointKey<T> key, ConfigurationReader reader, MessageCallback<T> callback) throws ConsumerException {
+    public <T> MessageConsumer<T> createConsumer(EndpointKey<T> key, Mapper reader, MessageCallback<T> callback) throws ConsumerException {
         try {
             SqsClientConfiguration config = reader.create(SqsClientConfiguration.class);
             SqsClient              client = clientFactory.create(config);

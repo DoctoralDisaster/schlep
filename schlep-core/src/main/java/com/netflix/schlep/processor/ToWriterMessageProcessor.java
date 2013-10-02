@@ -6,7 +6,7 @@ import rx.Subscription;
 import rx.subscriptions.BooleanSubscription;
 import rx.util.functions.Func1;
 
-import com.netflix.schlep.reader.IncomingMessage;
+import com.netflix.schlep.consumer.IncomingMessage;
 import com.netflix.schlep.writer.MessageWriter;
 import com.netflix.schlep.writer.Completion;
 import com.netflix.schlep.writer.OutgoingMessage;
@@ -17,7 +17,7 @@ import com.netflix.schlep.writer.OutgoingMessage;
  * @author elandau
  *
  */
-public class ToWriterMessageProcessor implements MessageProcessor {
+public class ToWriterMessageProcessor implements MessageHandler {
     private MessageWriter writer;
     
     public ToWriterMessageProcessor(MessageWriter writer) {
@@ -25,7 +25,7 @@ public class ToWriterMessageProcessor implements MessageProcessor {
     }
     
     @Override
-    public Observable<Completion<IncomingMessage>> process(final IncomingMessage message) {
+    public Observable<Completion<IncomingMessage>> call(final IncomingMessage message) {
         return Observable.create(new Func1<Observer<Completion<IncomingMessage>>, Subscription>() {
             @Override
             public Subscription call(final Observer<Completion<IncomingMessage>> observer) {

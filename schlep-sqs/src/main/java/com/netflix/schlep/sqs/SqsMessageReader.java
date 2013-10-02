@@ -20,9 +20,9 @@ import rx.util.functions.Action1;
 
 import com.amazonaws.services.sqs.model.Message;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.netflix.schlep.reader.IncomingMessage;
-import com.netflix.schlep.reader.MessageReader;
-import com.netflix.schlep.sim.SimMessageReader;
+import com.netflix.schlep.consumer.IncomingMessage;
+import com.netflix.schlep.consumer.MessageConsumer;
+import com.netflix.schlep.sim.SimMessageConsumer;
 import com.netflix.schlep.util.UnstoppableStopwatch;
 
 /**
@@ -33,8 +33,8 @@ import com.netflix.schlep.util.UnstoppableStopwatch;
  * @author elandau
  *
  */
-public class SqsMessageReader implements MessageReader {
-    private static final Logger LOG = LoggerFactory.getLogger(SimMessageReader.class);
+public class SqsMessageReader implements MessageConsumer {
+    private static final Logger LOG = LoggerFactory.getLogger(SimMessageConsumer.class);
     
     private final String                 id;
     private final SqsClient              client;

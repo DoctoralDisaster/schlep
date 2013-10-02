@@ -36,7 +36,7 @@ subprojects {
         compile     'org.codehaus.jackson:jackson-core-asl:1.9.12'
         compile     'org.codehaus.jackson:jackson-mapper-asl:1.9.12'
         compile     'com.netflix.archaius:archaius-core:0.1.4'
-        compile     'com.netflix.governator:governator:1.0.4'
+        compile     'com.netflix.governator:governator:1.1.1'
         compile     'com.netflix.rxjava:rxjava-core:0.11.1'
         compile     'javax.ws.rs:jsr311-api:1.1.1'
         compile     'com.google.inject:guice:3.0'
@@ -53,6 +53,13 @@ subprojects {
         compile     'cglib:cglib:2.2.2';
         compile     'org.javassist:javassist:3.17.1-GA'
         compile     'commons-beanutils:commons-beanutils-core:1.8.3'
+        compile     'com.netflix.archaius:archaius-core:0.5.11'
+        compile     'com.netflix.servo:servo-core:0.4.32'
+        compile     'com.netflix.governator:governator:1.2.3'
+        compile     'com.netflix.eureka:eureka-client:1.1.109'
+        compile     'com.netflix.ribbon:ribbon-core:0.2.1'
+        compile     'com.netflix.ribbon:ribbon-eureka:0.2.1'
+        
         testCompile 'junit:junit:4.11'
         testCompile 'org.mockito:mockito-core:1.8.5'
     }
@@ -73,14 +80,14 @@ project(':schlep-core') {
 //   }
 //}
 
-//project(':schlep-sqs') {
-//    apply plugin: 'java'
-//    dependencies {
-//        compile  project(':schlep-core')
-//        compile 'com.amazonaws:aws-java-sdk:1.4.7'
-//         testCompile 'junit:junit:4.11'
-//     }
-// }
+project(':schlep-sqs') {
+    apply plugin: 'java'
+    dependencies {
+        compile  project(':schlep-core')
+        compile 'com.amazonaws:aws-java-sdk:1.4.7'
+         testCompile 'junit:junit:4.11'
+     }
+}
 
 project(':schlep-kafka') {
     apply plugin: 'scala'
@@ -140,10 +147,10 @@ project(':schlep-kafka') {
 //    }
 //}
 
-project(':schlep-router') {
-    apply plugin: 'java'
-    dependencies {
-        compile  project(':schlep-core')
-        testCompile 'junit:junit:4.11'
-    }
-}
+//project(':schlep-router') {
+//    apply plugin: 'java'
+//    dependencies {
+//        compile  project(':schlep-core')
+//        testCompile 'junit:junit:4.11'
+//    }
+//}

@@ -25,4 +25,6 @@ public interface Component {
     void pause() throws Exception;
     
     void resume() throws Exception;
+    
+    String getId();
 }

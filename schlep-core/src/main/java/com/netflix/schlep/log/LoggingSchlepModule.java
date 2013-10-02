@@ -1,16 +1,15 @@
 package com.netflix.schlep.log;
 
-import com.netflix.schlep.guice.SchlepPluginModule;
+import com.netflix.schlep.guice.SchlepPlugin;
 
-public class LoggingSchlepModule extends SchlepPluginModule {
-    public static final String NAME = "log";
+public class LoggingSchlepModule extends SchlepPlugin {
+    public static final String TYPE = "log";
     
     public LoggingSchlepModule() {
-        super(NAME);
     }
 
     @Override
-    public void internalConfigure() {
-        this.registerMessageProducerProvider(LoggingMessageProducerProvider.class);
+    public void configure() {
+//        this.registerMessageProducerProvider(LoggingMessageProducerProvider.class);
     }
 }
