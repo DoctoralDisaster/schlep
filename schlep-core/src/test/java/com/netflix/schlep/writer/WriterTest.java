@@ -15,8 +15,12 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
+import com.netflix.schlep.Completion;
 import com.netflix.schlep.guice.SchlepModule;
-import com.netflix.schlep.sim.SimMessageWriter;
+import com.netflix.schlep.producer.MessageProducerManager;
+import com.netflix.schlep.producer.MessageProducer;
+import com.netflix.schlep.producer.OutgoingMessage;
+import com.netflix.schlep.sim.SimMessageProducer;
 
 public class WriterTest {
     private static final Logger LOG = LoggerFactory.getLogger(WriterTest.class);
@@ -29,15 +33,15 @@ public class WriterTest {
      */
     @Singleton
     public static class MyService {
-        private MessageWriter   writer;
+        private MessageProducer   writer;
         
         @Inject
-        public MyService(MessageProducerRegistry manager) {
-            this.writer = manager.acquire(WRITER_ID);
+        public MyService(MessageProducerManager manager) throws Exception {
+            this.writer = manager.get(WRITER_ID);
             
             for (int i = 0; i < 10; i++) {
                 this.writer
-                    .write(OutgoingMessage.builder()
+                    .send(OutgoingMessage.builder()
                         .withMessage("test-" + i)
                         .build())
                     .subscribe(new Action1<Completion<OutgoingMessage>>() {
@@ -65,14 +69,13 @@ public class WriterTest {
             );
         
         LOG.info("Started LifecycleManager");
-        MessageProducerRegistry writerManager = injector.getInstance(MessageProducerRegistry.class);
+        MessageProducerManager writerManager = injector.getInstance(MessageProducerManager.class);
         writerManager.add(
-                WRITER_ID, 
-                Suppliers.<MessageWriter>ofInstance(SimMessageWriter.builder()
+                SimMessageProducer.builder()
                      .withId(WRITER_ID)
                      .withBatchSize(3)
-                     .withWriterCount(3)
-                     .build()));
+                     .withThreadCount(3)
+                     .build());
                 
         injector.getInstance(MyService.class);
         

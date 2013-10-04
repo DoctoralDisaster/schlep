@@ -2,6 +2,8 @@ package com.netflix.schlep.sqs;
 
 import org.apache.commons.lang.StringUtils;
 
+import com.google.common.base.Preconditions;
+
 /**
  * Wrapper for queuename providing access to parts of the name.
  * 
@@ -19,6 +21,7 @@ public class QueueName {
     private final String  accountId;
     
     public QueueName(String uriOrName) {
+        Preconditions.checkNotNull(uriOrName, "QueueName cannot be null");
         isFullyQualified = isFullQualifiedQueueName(uriOrName);
         if (!isFullyQualified) {
             name      = uriOrName;

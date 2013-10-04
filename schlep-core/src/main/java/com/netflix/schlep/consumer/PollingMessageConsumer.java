@@ -15,9 +15,9 @@ import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.netflix.schlep.processor.MessageHandler;
-import com.netflix.schlep.writer.Completion;
-import com.netflix.schlep.writer.Completion.SelectFirst;
+import com.netflix.schlep.Completion;
+import com.netflix.schlep.Completion.SelectFirst;
+import com.netflix.schlep.exception.ConsumerException;
 
 import rx.Observable;
 import rx.Subscription;
@@ -53,13 +53,14 @@ public abstract class PollingMessageConsumer implements MessageConsumer {
     private final int    maxBacklog;
     
     // State
-    private final AtomicBoolean             paused   = new AtomicBoolean();
+    private final AtomicBoolean             paused        = new AtomicBoolean();
+    private final AtomicLong                busyCount     = new AtomicLong(0);
+    private final AtomicLong                messagesRead  = new AtomicLong(0);
+    private final AtomicLong                messagesAcked = new AtomicLong(0);
+    
     private ScheduledExecutorService        executor;
     private PublishSubject<IncomingMessage> subject = PublishSubject.create();
     private Subscription                    subscription;
-    private final AtomicLong                busyCount = new AtomicLong(0);
-    private final AtomicLong                messagesRead = new AtomicLong(0);
-    private final AtomicLong                messagesAcked = new AtomicLong(0);
 
     private final ConcurrentMap<Subscription, MessageHandler> handlers = Maps.newConcurrentMap();
     
@@ -125,14 +126,15 @@ public abstract class PollingMessageConsumer implements MessageConsumer {
      * Read a single batch from the subclass protocol implementation
      * @param batchSize
      * @return
+     * @throws ConsumerException 
      */
-    protected abstract List<IncomingMessage> readBatch(int batchSize);
+    protected abstract List<IncomingMessage> readBatch(int batchSize) throws ConsumerException;
     
     /**
      * Send an ACK batch response.  Can be a no-op for non-acking protocols.
      * @param act
      */
-    protected abstract void sendAckBatch(List<Completion<IncomingMessage>> act);
+    protected abstract void sendAckBatch(List<Completion<IncomingMessage>> act) throws ConsumerException;
     
     @Override
     public synchronized void start() throws Exception {
@@ -141,9 +143,13 @@ public abstract class PollingMessageConsumer implements MessageConsumer {
             return;
         }
         
+        LOG.info(String.format("Starting consumer '%s'", getId()));
+        
+        // Consider making this a cache thread pool so we can adjust the number of threads at runtime
         executor = Executors.newScheduledThreadPool(threadCount,
                 new ThreadFactoryBuilder()
                 .setNameFormat("Consumer-" + getId() + "-%d")
+                .setDaemon(true)
                 .build());
         
         subscription = subject
@@ -184,7 +190,7 @@ public abstract class PollingMessageConsumer implements MessageConsumer {
                     
                     // execute all of the filters in parallel
                     return Observable
-                        .merge(completions)
+                        .merge(Observable.from(completions))
                         .reduce(SelectFirst.get());
                 }                
             })
@@ -198,7 +204,12 @@ public abstract class PollingMessageConsumer implements MessageConsumer {
                         executor.submit(new Runnable() {
                             @Override
                             public void run() {
-                                sendAckBatch(act);
+                                try {
+                                    sendAckBatch(act);
+                                } catch (ConsumerException e) {
+                                    LOG.error("Error acking messages", e);
+                                    // TODO: implement retry logic
+                                }
                             }
                         });
                         
@@ -241,6 +252,8 @@ public abstract class PollingMessageConsumer implements MessageConsumer {
      */
     @Override
     public synchronized void stop() throws Exception {
+        LOG.info(String.format("Stopping consumer '%s'", getId()));
+        
         if (executor != null) {
             executor.shutdownNow();
             executor = null;

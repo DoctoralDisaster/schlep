@@ -1,187 +1,131 @@
 package com.netflix.schlep.sqs;
 
-import java.io.ByteArrayInputStream;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.auth.AWSCredentials;
 import com.google.common.base.Function;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.netflix.schlep.EndpointKey;
-import com.netflix.schlep.consumer.MessageConsumer;
+import com.google.common.collect.Lists;
+import com.netflix.schlep.Completion;
+import com.netflix.schlep.consumer.IncomingMessage;
+import com.netflix.schlep.consumer.PollingMessageConsumer;
 import com.netflix.schlep.exception.ConsumerException;
 import com.netflix.schlep.mapper.Serializer;
 import com.netflix.schlep.sqs.transform.FromBase64Transform;
-import com.netflix.schlep.sqs.transform.NoOpTransform;
 import com.netflix.schlep.util.UnstoppableStopwatch;
-import com.netflix.util.batch.Batcher;
 
-class SqsMessageConsumer implements MessageConsumer {
+class SqsMessageConsumer extends PollingMessageConsumer {
     private static final Logger LOG = LoggerFactory.getLogger(SqsMessageConsumer.class);
     
-    private static final long THROTTLE_TIMESPAN = 1000;
-
-    private final MessageCallback<T>                callback;
-    private final SqsClient                         client;
-    private final EndpointKey<T>                    key;
-    private final String                            consumerName;
-    private Function<String, String>                transform;
-    private final Serializer<T>                     serializer;
-    private final SqsClientConfiguration            clientConfig;
-    private ExecutorService                         executor;
-    private final Batcher<MessageFuture<Boolean>>   ackBatcher;
-    private final Batcher<MessageFuture<Boolean>>   renewBatcher;
+    public static final Function<String, String> DEFAULT_TRANSFORM = new FromBase64Transform();
+    public static final long   DEFAULT_VISIBILITY_TIMEOUT = TimeUnit.MINUTES.toSeconds(5);
     
-    public SqsMessageConsumer(EndpointKey<T> key, SqsClient client, SqsClientConfiguration config, MessageCallback<T> callback) throws ConsumerException {
-        this.callback       = callback;
-        this.key            = key;
-        this.consumerName   = key.getName();
-        this.clientConfig   = config;
-        this.client         = client;
-        this.serializer     = config.getSerializerFactory().findSerializer(key.getMessageType());
-
-        if (this.clientConfig.getEnable64Encoding()) {
-            transform = new FromBase64Transform();
-        }
-        else {
-            transform = new NoOpTransform();
-        }
-        
-        ackBatcher = null;
-        renewBatcher = null;
-        
-//        this.ackBatcher     = clientConfig.getBatchPolicy().create(new Function<List<MessageFuture<Boolean>>, Boolean>() {
-//            public Boolean apply(List<MessageFuture<Boolean>> messages) {
-//                SqsMessageConsumer.this.client.deleteMessages(messages);
-//                return true;
-//            }
-//        });
-//        
-//        this.renewBatcher     = clientConfig.getBatchPolicy().create(new Function<List<MessageFuture<Boolean>>, Boolean>() {
-//            public Boolean apply(List<MessageFuture<Boolean>> messages) {
-//                SqsMessageConsumer.this.client.renewMessages(messages);
-//                return true;
-//            }
-//        });
-    }
+    private final Function<String, String> transform;
+    private final Serializer               serializer;
+    private final long                     visibilityTimeout;
+    private final AmazonSqsClient          client;
     
-    @Override
-    public synchronized void start() throws Exception {
-        if (executor != null) 
-            return;
-        
-        LOG.info("Starting - " + consumerName);
-        
-        int threadCount = clientConfig.getWorkerThreadCount();
-        executor = Executors.newFixedThreadPool(
-                threadCount, 
-                new ThreadFactoryBuilder()
-                    .setDaemon(true)
-                    .setNameFormat(consumerName + "-%d")
-                    .build());
-        for (int i = 0; i < threadCount; i++) {
-            executor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        while (!Thread.interrupted()) {
-                            try {
-                                int count = receiveAndDispatchMessages(clientConfig.getMaxReadBatchSize(), null);
-                                if (count == 0) {
-                                    Thread.sleep(THROTTLE_TIMESPAN);
-                                }
-                            } catch (ConsumerException e) {
-                                Thread.sleep(THROTTLE_TIMESPAN);
-                            }
-                        }
-                    } catch (InterruptedException e) {
-                        LOG.info("Terminating thread");
-                    }
-                }
-            });
-        }
-    }
-    
-    @Override
-    public synchronized void stop() throws Exception {
-        LOG.info("Stopping - " + consumerName);
-        
-        if (executor != null) {
-            executor.shutdown();
-            if (!executor.awaitTermination(clientConfig.getTerminateTimeout(), TimeUnit.MILLISECONDS)) {
-                executor.shutdownNow();
-            }
-        }
-    }
-
-    @Override
-    public void pause() {
-        // TODO:
-    }
-
-    @Override
-    public void resume() {
-        // TODO:
-    }
-
     /**
-     * Dispatch a single message that was received
+     * Builder
      * 
-     * @param message
-     * @param sw
+     * @param <T>
      */
-    private void dispatchMessage(final Message message, final UnstoppableStopwatch sw, long visibilityTimeout) {
-        // First, let's deserialize the message from a string to an entity
-        T entity;
-        try {
-            entity = serializer.deserialize(new ByteArrayInputStream(transform.apply(message.getBody()).getBytes()));
-        }
-        catch (Throwable t) {
-            LOG.warn("Failed to deserialize message : " + message.getBody(), t);
-            // TODO: Discard the message or put in a poison queue
-            return;
+    public static abstract class Builder<T extends Builder<T>> extends PollingMessageConsumer.Builder<T> {
+        private Function<String, String> transform         = DEFAULT_TRANSFORM;
+        private long            visibilityTimeout = DEFAULT_VISIBILITY_TIMEOUT;
+        private Serializer      serializer;
+        private AmazonSqsClient.Builder clientBuilder = AmazonSqsClient.builder();
+        
+        public T withCredentials(AWSCredentials credentials) {
+            this.clientBuilder.withCredentials(credentials);
+            return self();
         }
         
-        try {
-            callback.consume(new SqsIncomingMessage<T>(message, entity, sw, visibilityTimeout) {
-                @Override
-                public ListenableFuture<Boolean> ack() {
-                    MessageFuture<Boolean> future = new MessageFuture<Boolean>(message);
-                    ackBatcher.add(future);
-                    return future;
-                }
-
-                @Override
-                public ListenableFuture<Boolean> renew(long duration, TimeUnit units) {
-                    extendVisibilityTimeout(duration, units);
-                    MessageFuture<Boolean> future = new MessageFuture<Boolean>(message, this.getVisibilityTimeout(TimeUnit.SECONDS));
-                    renewBatcher.add(future);
-                    return future;
-                }
-
-                @Override
-                public ListenableFuture<Boolean> nak() {
-                    throw new UnsupportedOperationException("NAK not supported for SQS");
-                }
-
-                @Override
-                public ListenableFuture<Boolean> reply(T message) {
-                    throw new UnsupportedOperationException("Reply not supported for SQS");
-                }
-            });
+        public T withTransform(Function<String, String> transform) {
+            this.transform = transform;
+            return self();
         }
-        catch (Throwable t) {
-            LOG.warn("Failed to consume message : " + message.getBody(), t);
-            // TODO: Discard the message or put in a poison queue
-            return;
-        }            
+        
+        public T withVisibilityTimeout(long timeout) {
+            this.visibilityTimeout = timeout;
+            return self();
+        }
+        
+        public T withSerializer(Serializer serializer) {
+            this.serializer = serializer;
+            return self();
+        }
+        
+        public T withConnectionTimeout(int connectTimeout) {
+            clientBuilder.withConnectionTimeout(connectTimeout);
+            return self();
+        }
+        
+        public T withReadTimeout(int readTimeout) {
+            clientBuilder.withReadTimeout(readTimeout);
+            return self();
+        }
+        
+        public T withMaxConnections(int maxConnections) {
+            clientBuilder.withMaxConnections(maxConnections);
+            return self();
+        }
+        
+        public T withMaxRetries(int retries) {
+            clientBuilder.withMaxRetries(retries);
+            return self();
+        }
+
+        public T withQueueName(String queueName) {
+            clientBuilder.withQueueName(queueName);
+            return self();
+        }
+        
+        public T withRegion(String region) {
+            clientBuilder.withRegion(region);
+            return self();
+        }
+        
+        public SqsMessageConsumer build() throws Exception {
+            return new SqsMessageConsumer(this);
+        }
+
+        @Override
+        public String toString() {
+            return "Builder [transform=" + transform + ", visibilityTimeout="
+                    + visibilityTimeout + ", serializer=" + serializer
+                    + ", clientBuilder=" + clientBuilder + "]";
+        }
+
+    }
+    
+    /**
+     * BuilderWrapper to link with subclass Builder
+     * @author elandau
+     *
+     */
+    private static class BuilderWrapper extends Builder<BuilderWrapper> {
+        @Override
+        protected BuilderWrapper self() {
+            return this;
+        }
+    }
+    
+    public static Builder<?> builder() {
+        return new BuilderWrapper();
+    }
+    
+    protected SqsMessageConsumer(Builder<?> init) throws Exception {
+        super(init);
+        
+        this.transform         = init.transform;
+        this.visibilityTimeout = init.visibilityTimeout;
+        this.serializer        = init.serializer;
+        this.client            = init.clientBuilder.build();
     }
     
     /**
@@ -191,20 +135,38 @@ class SqsMessageConsumer implements MessageConsumer {
      * @return
      * @throws ConsumerException
      */
-    private int receiveAndDispatchMessages(int maxMessageCount, List<String> attributes) throws ConsumerException {
+    @Override
+    protected List<IncomingMessage> readBatch(int batchSize) throws ConsumerException {
         try {
-            long timeout = clientConfig.getVisibilityTimeoutSeconds();
+            long timeout = visibilityTimeout;
+            
             // Execute the request
-            Collection<Message> result = client.receiveMessages(maxMessageCount, timeout, attributes);
-            UnstoppableStopwatch sw = new UnstoppableStopwatch();
+            Collection<SqsMessage> result = client.receiveMessages(batchSize, timeout, null);
+            UnstoppableStopwatch   sw     = new UnstoppableStopwatch();
+            
             // Transform to internal response
-            for (Message message : result) {
-                dispatchMessage(message, sw, timeout);
+            List<IncomingMessage> messages = Lists.newArrayList();
+            for (SqsMessage message : result) {
+                messages.add(new SqsIncomingMessage(message, sw, visibilityTimeout) {
+                    @Override
+                    public void ack() {
+                    }
+
+                    @Override
+                    public void nak() {
+                    }
+                });
             }
             
-            return result.size();
+            return messages;
         } catch (Exception e) {
-            throw new ConsumerException("Error consuming messages " + key, e);
+            throw new ConsumerException("Error consuming messages " + getId(), e);
         }
+    }
+
+    @Override
+    protected void sendAckBatch(List<Completion<IncomingMessage>> act) {
+        // TODO Auto-generated method stub
+        
     }
 }

@@ -18,7 +18,7 @@ public interface SerializerProvider {
      * @param clazz
      * @return
      */
-    public <T> Serializer<T> findSerializer(Class<T> clazz);
+    public <T> Serializer findSerializer(Class<T> clazz);
     
-    public <T> Serializer<T> findSerializer(TypeLiteral<T> type);
+    public <T> Serializer findSerializer(TypeLiteral<T> type);
 }

@@ -4,7 +4,6 @@ import rx.Subscription;
 
 import com.google.common.base.Function;
 import com.netflix.schlep.component.Component;
-import com.netflix.schlep.processor.MessageHandler;
 
 /**
  * Abstraction for a MessageConsumer that emits IncomingMessage.  The
@@ -12,7 +11,6 @@ import com.netflix.schlep.processor.MessageHandler;
  * begin emitting IncommingMessages once subscribed to.
  * 
  * @author elandau
- * * @param <T>
  */
 public interface MessageConsumer extends Component {
     Subscription subscribe(MessageHandler handler);

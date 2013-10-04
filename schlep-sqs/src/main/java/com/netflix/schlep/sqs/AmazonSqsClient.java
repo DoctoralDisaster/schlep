@@ -16,7 +16,6 @@ import com.amazonaws.services.sqs.model.ChangeMessageVisibilityBatchResultEntry;
 import com.amazonaws.services.sqs.model.DeleteMessageBatchRequest;
 import com.amazonaws.services.sqs.model.DeleteMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.DeleteMessageBatchResult;
-import com.amazonaws.services.sqs.model.DeleteMessageBatchResultEntry;
 import com.amazonaws.services.sqs.model.GetQueueUrlRequest;
 import com.amazonaws.services.sqs.model.GetQueueUrlResult;
 import com.amazonaws.services.sqs.model.ListQueuesRequest;
@@ -29,8 +28,6 @@ import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.inject.Provider;
-import com.google.inject.assistedinject.Assisted;
 import com.netflix.schlep.exception.ProducerException;
 
 /**
@@ -39,30 +36,97 @@ import com.netflix.schlep.exception.ProducerException;
  * 
  * @author elandau
  */
-public class AmazonSqsClient implements SqsClient {
+public class AmazonSqsClient {
+    public static final int DEFAULT_READ_TIMEOUT        = 10;
+    public static final int DEFAULT_WAIT_TIMEOUT        = 10;
+    public static final int DEFAULT_CONNECT_TIMEOUT     = 10;
+    public static final int DEFAULT_MAX_RETRIES         = 10;
+    public static final int DEFAULT_MAX_CONNECTIONS     = 10;
+    public static final String DEFAULT_REGION           = "us-east-1";
+    
+    public static class Builder {
+        private AWSCredentials credentials;
+        private int connectTimeout  = DEFAULT_CONNECT_TIMEOUT;
+        private int readTimeout     = DEFAULT_READ_TIMEOUT;
+        private int maxConnections  = DEFAULT_MAX_CONNECTIONS;
+        private int maxRetries      = DEFAULT_MAX_RETRIES;
+        private String region       = DEFAULT_REGION;
+        private String queueName;
+        
+        public Builder withQueueName(String queueName) {
+            this.queueName = queueName;
+            return this;
+        }
+        
+        public Builder withRegion(String region) {
+            this.region = region;
+            return this;
+        }
+        
+        public Builder withCredentials(AWSCredentials credentials) {
+            this.credentials = credentials;
+            return this;
+        }
+        
+        public Builder withConnectionTimeout(int connectTimeout) {
+            this.connectTimeout = connectTimeout;
+            return this;
+        }
+        
+        public Builder withReadTimeout(int readTimeout) {
+            this.readTimeout = readTimeout;
+            return this;
+        }
+        
+        public Builder withMaxConnections(int maxConnections) {
+            this.maxConnections = maxConnections;
+            return this;
+        }
+        
+        public Builder withMaxRetries(int retries) {
+            this.maxRetries = retries;
+            return this;
+        }
+        
+        public AmazonSqsClient build() throws Exception {
+            return new AmazonSqsClient(this);
+        }
+
+        @Override
+        public String toString() {
+            return "Builder [credentials=" + credentials + ", connectTimeout="
+                    + connectTimeout + ", readTimeout=" + readTimeout
+                    + ", maxConnections=" + maxConnections + ", maxRetries="
+                    + maxRetries + ", region=" + region + ", queueName="
+                    + queueName + "]";
+        }
+    }
+    
+    public static Builder builder() {
+        return new Builder();
+    }
+    
     private final AmazonSQSClient           client;
     private final String                    queueUrl;
-    private final SqsClientConfiguration    clientConfig;
-    
-    public AmazonSqsClient(
-                      Provider<AWSCredentials> awsCredentials, 
-            @Assisted SqsClientConfiguration clientConfig) throws Exception {
+    private final String                    queueName;
 
-        this.clientConfig = clientConfig;
+    protected AmazonSqsClient(Builder builder) throws Exception {
+        this.queueName = builder.queueName;
         
         // Construct the client
-        this.client = new AmazonSQSClient(awsCredentials.get(), new ClientConfiguration()
-                .withConnectionTimeout(clientConfig.getConnectTimeoutInMillis())
-                .withSocketTimeout    (clientConfig.getReadTimeoutInMillis())
-                .withMaxConnections   (clientConfig.getMaxConnections())
-                .withMaxErrorRetry    (clientConfig.getMaxRetries()));
-        
+        this.client = new AmazonSQSClient(builder.credentials, 
+                new ClientConfiguration()
+                    .withConnectionTimeout(builder.connectTimeout)
+                    .withSocketTimeout    (builder.readTimeout)
+                    .withMaxConnections   (builder.maxConnections)
+                    .withMaxErrorRetry    (builder.maxRetries));
+            
         // Modify the region endpoint
-        client.setEndpoint(clientConfig.getEndpoint());
+        client.setEndpoint("sqs." + builder.region + ".amazonaws.com");
         
         // Determine the queue URL
         GetQueueUrlRequest request = new GetQueueUrlRequest();
-        QueueName queueName = new QueueName(clientConfig.getQueueName());
+        QueueName queueName = new QueueName(builder.queueName);
         
         if (!queueName.isFullQualifiedName()) {
             // List all queue names and find the one which has a full url ending with the queue name
@@ -80,7 +144,7 @@ public class AmazonSqsClient implements SqsClient {
 
             // TODO: Should we auto create the queue? I'm guessing no!
             if (!found) {
-                throw new Exception("SQS queue not found. " + clientConfig.getQueueName());
+                throw new Exception("SQS queue not found. " + builder.queueName);
             }
             
             request.setQueueName(queueName.getName());
@@ -123,13 +187,11 @@ public class AmazonSqsClient implements SqsClient {
     }  
 
 
-    @Override
-    public List<Message> receiveMessages(int maxMessageCount, long visibilityTimeout) {
+    public List<SqsMessage> receiveMessages(int maxMessageCount, long visibilityTimeout) {
         return receiveMessages(maxMessageCount, visibilityTimeout, null);
     }
 
-    @Override
-    public List<Message> receiveMessages(int maxMessageCount, long visibilityTimeout, List<String> attributes) {
+    public List<SqsMessage> receiveMessages(int maxMessageCount, long visibilityTimeout, List<String> attributes) {
         // Prepare the request
         ReceiveMessageRequest request = new ReceiveMessageRequest()
             .withQueueUrl           (queueUrl)
@@ -139,16 +201,19 @@ public class AmazonSqsClient implements SqsClient {
         if (attributes != null)
             request = request.withAttributeNames(attributes);
             
-        return client.receiveMessage(request).getMessages();
+        List<SqsMessage> response = Lists.newArrayList();
+        for (Message message : client.receiveMessage(request).getMessages()) {
+            response.add(new SqsMessage(message));
+        }
+        return response;
     }
     
-    @Override
-    public List<MessageFuture<Boolean>> deleteMessages(List<MessageFuture<Boolean>> messages) {
+    public List<SqsMessage> deleteMessages(List<SqsMessage> messages) {
         // Construct a send message request and assign each message an ID equivalent to it's position
         // in the original list for fast lookup on the response
         final List<DeleteMessageBatchRequestEntry> batchReqEntries = new ArrayList<DeleteMessageBatchRequestEntry>(messages.size());
         int id = 0;
-        for (MessageFuture<Boolean> message : messages) {
+        for (SqsMessage message : messages) {
             batchReqEntries.add(new DeleteMessageBatchRequestEntry(
                     Integer.toString(id), 
                     message.getMessage().getReceiptHandle()));
@@ -163,19 +228,14 @@ public class AmazonSqsClient implements SqsClient {
         DeleteMessageBatchResult result = null;
         result = client.deleteMessageBatch(request);
 
-        // Update the future for successful sends
-        for (DeleteMessageBatchResultEntry entry : result.getSuccessful()) {
-            messages.get(Integer.parseInt(entry.getId())).set(true);
-        }
-
         // Handle failed sends
         if (result.getFailed() != null && !result.getFailed().isEmpty()) {
-            List<MessageFuture<Boolean>> retryableMessages = Lists.newArrayListWithCapacity(result.getFailed().size());
+            List<SqsMessage> retryableMessages = Lists.newArrayListWithCapacity(result.getFailed().size());
             for (BatchResultErrorEntry entry : result.getFailed()) {
                 // There cannot be resent and are probably the result of something like message exceeding
                 // the max size or certificate errors
                 if (entry.isSenderFault()) {
-                    messages.get(Integer.parseInt(entry.getId())).setException(new ProducerException(entry.getCode()));
+                    // TODO: messages.get(Integer.parseInt(entry.getId())).setException(new ProducerException(entry.getCode()));
                 }
                 // These messages can probably be resent and may be due to issues on the amazon side, 
                 // such as service timeout
@@ -191,13 +251,12 @@ public class AmazonSqsClient implements SqsClient {
         }
     }
     
-    @Override
-    public List<MessageFuture<Boolean>> renewMessages(List<MessageFuture<Boolean>> messages) {
+    public List<SqsMessage> renewMessages(List<SqsMessage> messages) {
         // Construct a send message request and assign each message an ID equivalent to it's position
         // in the original list for fast lookup on the response
         final List<ChangeMessageVisibilityBatchRequestEntry> batchReqEntries = new ArrayList<ChangeMessageVisibilityBatchRequestEntry>(messages.size());
         int id = 0;
-        for (MessageFuture<Boolean> messageRenew : messages) {
+        for (SqsMessage messageRenew : messages) {
             // TODO: Add delay
             batchReqEntries.add(new ChangeMessageVisibilityBatchRequestEntry()
                     .withId(Integer.toString(id)) 
@@ -215,12 +274,12 @@ public class AmazonSqsClient implements SqsClient {
         
         // Update the future for successful sends
         for (ChangeMessageVisibilityBatchResultEntry entry : result.getSuccessful()) {
-            messages.get(Integer.parseInt(entry.getId())).set(true);
+            messages.get(Integer.parseInt(entry.getId()));
         }
         
         // Handle failed sends
         if (result.getFailed() != null && !result.getFailed().isEmpty()) {
-            List<MessageFuture<Boolean>> retryableMessages = Lists.newArrayListWithCapacity(result.getFailed().size());
+            List<SqsMessage> retryableMessages = Lists.newArrayListWithCapacity(result.getFailed().size());
             for (BatchResultErrorEntry entry : result.getFailed()) {
                 // There cannot be resent and are probably the result of something like message exceeding
                 // the max size or certificate errors
@@ -241,55 +300,12 @@ public class AmazonSqsClient implements SqsClient {
         }
     }
 
-    @Override
-    public List<MessageFuture<Boolean>> sendMessages(final List<MessageFuture<Boolean>> messages) {
-        // Construct a send message request and assign each message an ID equivalent to it's position
-        // in the original list for fast lookup on the response
-        final List<SendMessageBatchRequestEntry> batchReqEntries = new ArrayList<SendMessageBatchRequestEntry>(messages.size());
-        int id = 0;
-        for (MessageFuture<Boolean> message : messages) {
-            // TODO: Add delay
-            batchReqEntries.add(new SendMessageBatchRequestEntry(Integer.toString(id), message.getMessage().getBody()));
-            ++id;
-        }
-        
-        SendMessageBatchRequest request = new SendMessageBatchRequest()
-            .withQueueUrl(queueUrl)
-            .withEntries(batchReqEntries);
-    
-        // Send the request
-        SendMessageBatchResult result = client.sendMessageBatch(request);
-        
-        // Update the future for successful sends
-        for (SendMessageBatchResultEntry entry : result.getSuccessful()) {
-            messages.get(Integer.parseInt(entry.getId())).set(true);
-        }
-        
-        // Handle failed sends
-        if (result.getFailed() != null && !result.getFailed().isEmpty()) {
-            List<MessageFuture<Boolean>> retryableMessages = Lists.newArrayListWithCapacity(result.getFailed().size());
-            for (BatchResultErrorEntry entry : result.getFailed()) {
-                // There cannot be resent and are probably the result of something like message exceeding
-                // the max size or certificate errors
-                if (entry.isSenderFault()) {
-                    messages.get(Integer.parseInt(entry.getId())).setException(new ProducerException(entry.getCode()));
-                }
-                // These messages can probably be resent and may be due to issues on the amazon side, 
-                // such as service timeout
-                else {
-                    retryableMessages.add(messages.get(Integer.parseInt(entry.getId())));
-                }
-            }
-            return retryableMessages;
-        }
-        // All sent OK
-        else {
-            return ImmutableList.of();
-        }
-    }
-
-    @Override
     public String getQueueName() {
-        return clientConfig.getQueueName();
+        return queueName;
+    }
+
+    public SendMessageBatchResult sendMessageBatch(SendMessageBatchRequest request) {
+        request.withQueueUrl(queueUrl);
+        return client.sendMessageBatch(request);
     }
 }

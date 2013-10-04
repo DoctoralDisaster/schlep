@@ -15,7 +15,7 @@ import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.netflix.schlep.consumer.IncomingMessage;
 import com.netflix.schlep.consumer.MessageConsumer;
-import com.netflix.schlep.consumer.MessageConsumerRegistry;
+import com.netflix.schlep.consumer.MessageConsumerManager;
 import com.netflix.schlep.consumer.OneMessageConsumer;
 import com.netflix.schlep.guice.SchlepModule;
 
@@ -55,7 +55,7 @@ public class ConsumerTest {
                 }
             });
 
-        MessageConsumerRegistry readerManager = injector.getInstance(MessageConsumerRegistry.class);
+        MessageConsumerManager readerManager = injector.getInstance(MessageConsumerManager.class);
         OneMessageConsumer consumer = new OneMessageConsumer(CONSUMER_ID);
         readerManager.add(consumer);
 

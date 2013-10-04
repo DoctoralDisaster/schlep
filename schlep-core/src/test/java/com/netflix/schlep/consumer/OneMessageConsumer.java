@@ -5,8 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.google.common.base.Function;
-import com.netflix.schlep.processor.MessageHandler;
-import com.netflix.schlep.writer.Completion;
+import com.netflix.schlep.Completion;
 
 import rx.Observable;
 import rx.Subscription;
@@ -83,6 +82,11 @@ public class OneMessageConsumer implements MessageConsumer {
     public void resume() throws Exception {
     }
 
+    @Override
+    public boolean isStarted() {
+        return false;
+    }
+    
     @Override
     public String getId() {
         return id;

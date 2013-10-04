@@ -10,14 +10,14 @@ import java.io.OutputStream;
  *
  * @param <T>
  */
-public interface Serializer<T> {
+public interface Serializer {
     /**
      * Serialize an entity to a string.
      * @param entity
      * @return
      * @throws Exception
      */
-    public void serialize(T entity, OutputStream os) throws Exception;
+    public <T> void serialize(T entity, OutputStream os) throws Exception;
     
     /**
      * Deserialize an entity from a string
@@ -25,11 +25,5 @@ public interface Serializer<T> {
      * @return
      * @throws Exception
      */
-    public T deserialize(InputStream is) throws Exception;
-    
-    /**
-     * Get the type being serialized
-     * @return
-     */
-    Class<T> getType();
+    public <T> T deserialize(InputStream is, Class<T> clazz) throws Exception;
 }

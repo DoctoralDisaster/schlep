@@ -7,7 +7,7 @@ import com.google.inject.TypeLiteral;
 
 public class BaseSerializerProvider implements SerializerProvider {
 
-    private Map<TypeLiteral<?>, Serializer<?>> serializers = Maps.newHashMap();
+    private Map<TypeLiteral<?>, Serializer> serializers = Maps.newHashMap();
     private SerializerProvider defaultProvider;
     
     public BaseSerializerProvider() {
@@ -18,25 +18,25 @@ public class BaseSerializerProvider implements SerializerProvider {
         this.defaultProvider = serializerProvider;
     }
     
-    public synchronized <T> void addSerializer(Class<T> clazz, Serializer<T> serializer) {
+    public synchronized <T> void addSerializer(Class<T> clazz, Serializer serializer) {
         serializers.put(TypeLiteral.get(clazz), serializer);
     }
     
-    public synchronized <T> void addSerializer(TypeLiteral<?> type, Serializer<T> serializer) {
+    public synchronized <T> void addSerializer(TypeLiteral<?> type, Serializer serializer) {
         serializers.put(type, serializer);
     }
     
     @Override
-    public synchronized <T> Serializer<T> findSerializer(Class<T> clazz) {
+    public synchronized <T> Serializer findSerializer(Class<T> clazz) {
         return findSerializer(TypeLiteral.get(clazz));
     }
 
     @Override
-    public synchronized <T> Serializer<T> findSerializer(TypeLiteral<T> type) {
-        Serializer<?> serializer = serializers.get(type);
+    public synchronized <T> Serializer findSerializer(TypeLiteral<T> type) {
+        Serializer serializer = serializers.get(type);
         if (serializer == null)
             return defaultProvider.findSerializer(type);
-        return (Serializer<T>)serializer;
+        return serializer;
     }
 
 }

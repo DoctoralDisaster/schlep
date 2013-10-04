@@ -34,6 +34,7 @@ public class GovernatorBuilderMapper implements Mapper {
     
     @Override
     public <T> T apply(T obj) throws Exception {
+        @SuppressWarnings("unchecked")
         Class<T> type = (Class<T>) obj.getClass();
         
         LOG.info("Creating instance of " + type);
@@ -47,6 +48,8 @@ public class GovernatorBuilderMapper implements Mapper {
                     CaseFormat.UPPER_CAMEL.to(
                         CaseFormat.LOWER_CAMEL, 
                             StringUtils.substringAfter(method.getName(), "with"));
+            
+            LOG.info("Getting property: " + propertyName);
             
             Class<?>[] types = method.getParameterTypes();
             if (types.length != 1) {

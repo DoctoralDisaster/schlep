@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import rx.Observable;
+import rx.Observable.OnSubscribeFunc;
 import rx.Observer;
 import rx.Subscription;
 import rx.concurrency.Schedulers;
@@ -21,13 +22,11 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
+import com.netflix.schlep.Completion;
 import com.netflix.schlep.consumer.IncomingMessage;
 import com.netflix.schlep.consumer.MessageConsumer;
-import com.netflix.schlep.consumer.MessageConsumerRegistry;
 import com.netflix.schlep.guice.SchlepModule;
-import com.netflix.schlep.processor.MessageHandler;
 import com.netflix.schlep.sim.SimMessageConsumer;
-import com.netflix.schlep.writer.Completion;
 
 public class ConsumerTest {
     private static final Logger LOG = LoggerFactory.getLogger(ConsumerTest.class);
@@ -42,7 +41,7 @@ public class ConsumerTest {
         private MessageConsumer consumer;
 
         @Inject
-        public MyService(MessageConsumerRegistry manager) {
+        public MyService(MessageConsumerManager manager) {
             try {
                 this.consumer = manager.get(CONSUMER_ID);
             } catch (Exception e) {
@@ -64,9 +63,9 @@ public class ConsumerTest {
     @Test
     @Ignore
     public void test2() throws Exception {
-        Subscription s = Observable.create(new Func1<Observer<Integer>, Subscription>() {
+        Subscription s = Observable.create(new OnSubscribeFunc<Integer>() {
             @Override
-            public Subscription call(Observer<Integer> t1) {
+            public Subscription onSubscribe(Observer<? super Integer> t1) {
                 try {
                     int counter = 0;
                     while (true) {
@@ -104,7 +103,7 @@ public class ConsumerTest {
                     }
                 });
 
-        MessageConsumerRegistry readerManager = injector.getInstance(MessageConsumerRegistry.class);
+        MessageConsumerManager readerManager = injector.getInstance(MessageConsumerManager.class);
         readerManager.add(
                 SimMessageConsumer.builder()
                         .withId(CONSUMER_ID)

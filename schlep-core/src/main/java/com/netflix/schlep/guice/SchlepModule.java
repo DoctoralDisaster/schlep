@@ -1,22 +1,15 @@
 package com.netflix.schlep.guice;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.inject.AbstractModule;
-import com.google.inject.Scopes;
-import com.netflix.schlep.consumer.MessageConsumerRegistry;
-import com.netflix.schlep.writer.MessageProducerRegistry;
+import com.netflix.schlep.consumer.MessageConsumerManager;
+import com.netflix.schlep.producer.MessageProducerManager;
 
 public class SchlepModule extends AbstractModule {
-    private static final Logger LOG = LoggerFactory.getLogger(SchlepModule.class);
-    
     @Override
     protected void configure() {
-        
-        bind(MessageConsumerRegistry.class).in(Scopes.SINGLETON);
-        bind(MessageProducerRegistry.class).in(Scopes.SINGLETON);
-        
+
+        bind(MessageConsumerManager.class);
+        bind(MessageProducerManager.class);
 //        // Binding of a consumer via the @Consumer annotation.  Note that
 //        // the consumer is gotten from the MessageConsumerRegistry, which means
 //        // the consumer must have been registered prior to @Consumer being processed

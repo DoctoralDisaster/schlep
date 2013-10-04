@@ -12,15 +12,14 @@ import rx.concurrency.Schedulers;
 import rx.util.functions.Action1;
 
 import com.google.common.base.Suppliers;
+import com.netflix.schlep.Completion;
 import com.netflix.schlep.consumer.IncomingMessage;
-import com.netflix.schlep.consumer.MessageConsumerRegistry;
-import com.netflix.schlep.processor.MessageHandler;
+import com.netflix.schlep.consumer.MessageHandler;
 import com.netflix.schlep.processor.MessageProcessors;
+import com.netflix.schlep.producer.MessageProducerManager;
+import com.netflix.schlep.producer.MessageProducer;
 import com.netflix.schlep.sim.SimMessageConsumer;
-import com.netflix.schlep.sim.SimMessageWriter;
-import com.netflix.schlep.writer.Completion;
-import com.netflix.schlep.writer.MessageWriter;
-import com.netflix.schlep.writer.MessageProducerRegistry;
+import com.netflix.schlep.sim.SimMessageProducer;
 
 public class RouterTest {
     private static final Logger LOG = LoggerFactory.getLogger(RouterTest.class);

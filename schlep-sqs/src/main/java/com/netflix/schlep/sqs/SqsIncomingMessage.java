@@ -2,7 +2,6 @@ package com.netflix.schlep.sqs;
 
 import java.util.concurrent.TimeUnit;
 
-import com.amazonaws.services.sqs.model.Message;
 import com.netflix.schlep.consumer.IncomingMessage;
 import com.netflix.schlep.util.UnstoppableStopwatch;
 
@@ -13,11 +12,11 @@ import com.netflix.schlep.util.UnstoppableStopwatch;
  *
  */
 public abstract class SqsIncomingMessage implements IncomingMessage {
-    private final Message        message;
-    private final UnstoppableStopwatch sw;
-    private long  visibilityTimeoutInSeconds;
+    private final SqsMessage                message;
+    private final UnstoppableStopwatch      sw;
+    private long  visibilityTimeoutInSeconds ;
     
-    public SqsIncomingMessage(Message message, UnstoppableStopwatch sw, long visibilityTimeoutInSeconds) {
+    public SqsIncomingMessage(SqsMessage message, UnstoppableStopwatch sw, long visibilityTimeoutInSeconds) {
         this.message     = message;
         this.sw          = sw;
         this.visibilityTimeoutInSeconds = visibilityTimeoutInSeconds;
@@ -33,7 +32,7 @@ public abstract class SqsIncomingMessage implements IncomingMessage {
         return null;
     }
     
-    public Message getMessage() {
+    public SqsMessage getMessage() {
         return message;
     }
     

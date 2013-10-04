@@ -9,10 +9,10 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.netflix.schlep.Completion;
 import com.netflix.schlep.consumer.AbstractIncomingMessage;
 import com.netflix.schlep.consumer.PollingMessageConsumer;
 import com.netflix.schlep.consumer.IncomingMessage;
-import com.netflix.schlep.writer.Completion;
 
 /**
  * Simulates a message consumer by generating messages on a given interval
@@ -28,6 +28,11 @@ public class SimMessageConsumer extends PollingMessageConsumer {
     
     private final int itemsToSend;
     
+    /**
+     * Builder
+     * 
+     * @param <T>
+     */
     public static abstract class Builder<T extends Builder<T>> extends PollingMessageConsumer.Builder<T> {
         private int       itemsToSend         = 100;
         
@@ -39,9 +44,13 @@ public class SimMessageConsumer extends PollingMessageConsumer {
         public SimMessageConsumer build() {
             return new SimMessageConsumer(this);
         }
-        
     }
 
+    /**
+     * BuilderWrapper to link with subclass Builder
+     * @author elandau
+     *
+     */
     private static class BuilderWrapper extends Builder<BuilderWrapper> {
         @Override
         protected BuilderWrapper self() {
@@ -78,13 +87,14 @@ public class SimMessageConsumer extends PollingMessageConsumer {
                     LOG.info("Nak: " + getContents(String.class));
                 }
                 
-                public String toString() {
-                    return "Sim[" + StringUtils.abbreviate(this.getContents(String.class), 32) + "]";
-                }
                 @Override
                 public <T> T getContents(Class<T> clazz) {
                     Preconditions.checkArgument(clazz.equals(String.class), "Only string type allowed");
                     return (T) entity;
+                }
+                
+                public String toString() {
+                    return "Sim[" + StringUtils.abbreviate(this.getContents(String.class), 32) + "]";
                 }
             });
         }

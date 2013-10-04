@@ -47,8 +47,8 @@ public class JacksonSerializerProvider implements SerializerProvider {
     }
     
     @Override
-    public <T> Serializer<T> findSerializer(final Class<T> clazz) {
-        return new Serializer<T>() {
+    public <T> Serializer findSerializer(final Class<T> clazz) {
+        return new Serializer() {
             {
             	try {
                     clazz.getConstructor();
@@ -60,26 +60,21 @@ public class JacksonSerializerProvider implements SerializerProvider {
             }
             
             @Override
-            public void serialize(T entity, OutputStream os) throws Exception {
+            public <T> void serialize(T entity, OutputStream os) throws Exception {
                 if (entity != null) {
                     os.write(mapper.writeValueAsString(entity).getBytes());
                 }
             }
         
             @Override
-            public T deserialize(InputStream is) throws Exception {
-                return (T) mapper.readValue(is, clazz);
-            }
-
-            @Override
-            public Class<T> getType() {
-                return clazz;
+            public <T> T deserialize(InputStream is, Class<T> clazz2) throws Exception {
+                return (T) mapper.readValue(is, clazz2);
             }
         };
     }
 
     @Override
-    public <T> Serializer<T> findSerializer(TypeLiteral<T> type) {
-        return (Serializer<T>) findSerializer(type.getRawType());
+    public <T> Serializer findSerializer(TypeLiteral<T> type) {
+        return (Serializer) findSerializer(type.getRawType());
     }
 }

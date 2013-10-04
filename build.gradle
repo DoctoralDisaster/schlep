@@ -37,7 +37,7 @@ subprojects {
         compile     'org.codehaus.jackson:jackson-mapper-asl:1.9.12'
         compile     'com.netflix.archaius:archaius-core:0.1.4'
         compile     'com.netflix.governator:governator:1.1.1'
-        compile     'com.netflix.rxjava:rxjava-core:0.11.1'
+        compile     'com.netflix.rxjava:rxjava-core:0.13.+'
         compile     'javax.ws.rs:jsr311-api:1.1.1'
         compile     'com.google.inject:guice:3.0'
         compile     'com.google.inject.extensions:guice-multibindings:3.0'

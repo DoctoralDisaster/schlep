@@ -14,8 +14,8 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
+import rx.Observable.OnSubscribeFunc;
 import rx.subscriptions.BooleanSubscription;
-import rx.util.functions.Func1;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -26,11 +26,10 @@ import com.netflix.governator.configuration.PropertiesConfigurationProvider;
 import com.netflix.governator.guice.BootstrapBinder;
 import com.netflix.governator.guice.BootstrapModule;
 import com.netflix.governator.guice.LifecycleInjector;
-import com.netflix.schlep.governator.GovernatorConfigurationMessageConsumerProvider;
+import com.netflix.schlep.Completion;
+import com.netflix.schlep.governator.GovernatorConfigurationMessageConsumerFactory;
 import com.netflix.schlep.guice.SchlepModule;
-import com.netflix.schlep.processor.MessageHandler;
 import com.netflix.schlep.sim.SimSchlepPlugin;
-import com.netflix.schlep.writer.Completion;
 
 public class PropertiesConfigTest {
     private static final Logger LOG = LoggerFactory.getLogger(PropertiesConfigTest.class);
@@ -45,7 +44,7 @@ public class PropertiesConfigTest {
         private MessageConsumer consumer;
 
         @Inject
-        public MyService(MessageConsumerRegistry manager) {
+        public MyService(MessageConsumerManager manager) {
             try {
                 this.consumer = manager.get(CONSUMER_ID);
             } catch (Exception e) {
@@ -57,9 +56,10 @@ public class PropertiesConfigTest {
                 @Override
                 public Observable<Completion<IncomingMessage>> call(final IncomingMessage message) {
                     LOG.info(message.getContents(String.class));
-                    return Observable.create(new Func1<Observer<Completion<IncomingMessage>>, Subscription>() {
+                    return Observable.create(new OnSubscribeFunc<Completion<IncomingMessage>>() {
+
                         @Override
-                        public Subscription call(final Observer<Completion<IncomingMessage>> observer) {
+                        public Subscription onSubscribe(final Observer<? super Completion<IncomingMessage>> observer) {
                             LOG.info("Observe: " + message);
                             Executors.newSingleThreadScheduledExecutor().schedule(new Runnable() {
                                 @Override
@@ -69,11 +69,10 @@ public class PropertiesConfigTest {
                                     observer.onCompleted();
                                 }
                             }, 3, TimeUnit.SECONDS);
-                            
+                          
                             return new BooleanSubscription();
                         }
                     });
-//                    return Observable.from(Completion.from(message));
                 }
             });
         }
@@ -94,7 +93,7 @@ public class PropertiesConfigTest {
     public void test() throws Exception {
         final Properties properties = new Properties();
         properties.setProperty("com.netflix.schlep.consumer1.type",        SimSchlepPlugin.TYPE);
-        properties.setProperty("com.netflix.schlep.consumer1.threadCount", "2");
+        properties.setProperty("com.netflix.schlep.consumer1.threadCount", "4");
         properties.setProperty("com.netflix.schlep.consumer1.batchSize",   "10");
         properties.setProperty("com.netflix.schlep.consumer1.maxCount",    "100");
         properties.setProperty("com.netflix.schlep.consumer1.maxBacklog",  "10");
@@ -112,7 +111,7 @@ public class PropertiesConfigTest {
                 new AbstractModule() {
                     @Override
                     protected void configure() {
-                        bind(MessageConsumerProvider.class).to(GovernatorConfigurationMessageConsumerProvider.class);
+                        bind(DefaultMessageConsumerFactory.class).to(GovernatorConfigurationMessageConsumerFactory.class);
                         bind(MyService.class);
                     }
             })

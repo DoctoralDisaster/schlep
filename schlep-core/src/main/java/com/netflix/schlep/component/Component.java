@@ -27,4 +27,6 @@ public interface Component {
     void resume() throws Exception;
     
     String getId();
+
+    boolean isStarted();
 }

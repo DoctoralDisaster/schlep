@@ -3,7 +3,7 @@ package com.netflix.schlep.guice;
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.MapBinder;
 import com.netflix.schlep.consumer.MessageConsumerFactory;
-import com.netflix.schlep.writer.MessageWriterFactory;
+import com.netflix.schlep.producer.MessageProducerFactory;
 
 /**
  * Utility class with convenience methods for registering configurable components
@@ -31,8 +31,8 @@ public abstract class SchlepPlugin extends AbstractModule {
      * @param type
      * @param consumerProvider
      */
-    protected void registerProducerType(String type, Class<? extends MessageWriterFactory> producerProvider) {
-        MapBinder<String, MessageWriterFactory> producers = MapBinder.newMapBinder(binder(), String.class, MessageWriterFactory.class);
+    protected void registerProducerType(String type, Class<? extends MessageProducerFactory> producerProvider) {
+        MapBinder<String, MessageProducerFactory> producers = MapBinder.newMapBinder(binder(), String.class, MessageProducerFactory.class);
         producers.addBinding(type).to(producerProvider);
     }
 }

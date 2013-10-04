@@ -13,12 +13,12 @@ import rx.concurrency.Schedulers;
 import rx.subjects.PublishSubject;
 import rx.util.functions.Action1;
 
+import com.netflix.schlep.Completion;
 import com.netflix.schlep.consumer.IncomingMessage;
 import com.netflix.schlep.consumer.MessageConsumer;
-import com.netflix.schlep.processor.MessageHandler;
+import com.netflix.schlep.consumer.MessageHandler;
 import com.netflix.schlep.processor.MessageProcessors;
-import com.netflix.schlep.writer.MessageWriter;
-import com.netflix.schlep.writer.Completion;
+import com.netflix.schlep.producer.MessageProducer;
 
 public class SimConsumerTest {
     private static final Logger LOG = LoggerFactory.getLogger(SimConsumerTest.class);
