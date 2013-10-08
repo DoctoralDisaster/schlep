@@ -1,4 +1,4 @@
-package com.netflix.schlep.sqs;
+package com.netflix.schlep.sqs.producer;
 
 import java.io.ByteArrayOutputStream;
 import java.security.MessageDigest;
@@ -19,6 +19,9 @@ import com.google.common.collect.Lists;
 import com.netflix.schlep.exception.ProducerException;
 import com.netflix.schlep.mapper.Serializer;
 import com.netflix.schlep.producer.ConcurrentMessageProducer;
+import com.netflix.schlep.sqs.AmazonSqsClient;
+import com.netflix.schlep.sqs.AmazonSqsClient.Builder;
+import com.netflix.schlep.sqs.serializer.Base64Serializer;
 
 /**
  * MessageProducer that sends messages to an SQS queue.

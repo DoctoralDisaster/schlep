@@ -1,4 +1,4 @@
-package com.netflix.schlep.sqs;
+package com.netflix.schlep.sqs.consumer;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
@@ -20,6 +20,10 @@ import com.netflix.schlep.consumer.IncomingMessage;
 import com.netflix.schlep.consumer.PollingMessageConsumer;
 import com.netflix.schlep.exception.ConsumerException;
 import com.netflix.schlep.mapper.Serializer;
+import com.netflix.schlep.sqs.AmazonSqsClient;
+import com.netflix.schlep.sqs.SqsMessage;
+import com.netflix.schlep.sqs.AmazonSqsClient.Builder;
+import com.netflix.schlep.sqs.serializer.Base64Serializer;
 import com.netflix.schlep.util.UnstoppableStopwatch;
 
 class SqsMessageConsumer extends PollingMessageConsumer {

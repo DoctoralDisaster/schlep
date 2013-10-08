@@ -27,7 +27,7 @@ import com.netflix.governator.guice.BootstrapBinder;
 import com.netflix.governator.guice.BootstrapModule;
 import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.schlep.Completion;
-import com.netflix.schlep.governator.GovernatorConfigurationMessageConsumerFactory;
+import com.netflix.schlep.governator.GovernatorSchlepModule;
 import com.netflix.schlep.guice.SchlepModule;
 import com.netflix.schlep.sim.SimSchlepPlugin;
 
@@ -108,10 +108,10 @@ public class PropertiesConfigTest {
             .withModules(
                 new SchlepModule(),
                 new SimSchlepPlugin(),
+                new GovernatorSchlepModule(),
                 new AbstractModule() {
                     @Override
                     protected void configure() {
-                        bind(DefaultMessageConsumerFactory.class).to(GovernatorConfigurationMessageConsumerFactory.class);
                         bind(MyService.class);
                     }
             })

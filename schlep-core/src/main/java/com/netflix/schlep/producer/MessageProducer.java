@@ -25,7 +25,9 @@ public interface MessageProducer extends Component {
 
     /**
      * Write a message and return an observable on which a Completion will be emitted
-     * once the message is written successfully
+     * once the message is written successfully.  The caller MUST subscribe to the returned
+     * Observable in order for the message to be sent.
+     * 
      * @param message
      * @return
      */

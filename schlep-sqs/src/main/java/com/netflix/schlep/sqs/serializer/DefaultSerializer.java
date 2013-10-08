@@ -1,4 +1,4 @@
-package com.netflix.schlep.sqs;
+package com.netflix.schlep.sqs.serializer;
 
 import java.io.BufferedReader;
 import java.io.IOException;

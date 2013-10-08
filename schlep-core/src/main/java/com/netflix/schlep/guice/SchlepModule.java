@@ -7,9 +7,9 @@ import com.netflix.schlep.producer.MessageProducerManager;
 public class SchlepModule extends AbstractModule {
     @Override
     protected void configure() {
-
         bind(MessageConsumerManager.class);
         bind(MessageProducerManager.class);
+
 //        // Binding of a consumer via the @Consumer annotation.  Note that
 //        // the consumer is gotten from the MessageConsumerRegistry, which means
 //        // the consumer must have been registered prior to @Consumer being processed

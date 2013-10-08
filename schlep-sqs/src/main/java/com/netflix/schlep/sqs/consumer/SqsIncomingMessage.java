@@ -1,8 +1,9 @@
-package com.netflix.schlep.sqs;
+package com.netflix.schlep.sqs.consumer;
 
 import java.util.concurrent.TimeUnit;
 
 import com.netflix.schlep.consumer.IncomingMessage;
+import com.netflix.schlep.sqs.SqsMessage;
 import com.netflix.schlep.util.UnstoppableStopwatch;
 
 /**
