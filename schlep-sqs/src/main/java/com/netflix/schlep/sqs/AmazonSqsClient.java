@@ -1,7 +1,9 @@
 package com.netflix.schlep.sqs;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -25,7 +27,6 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageBatchResult;
-import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.netflix.schlep.exception.ProducerException;
@@ -37,11 +38,11 @@ import com.netflix.schlep.exception.ProducerException;
  * @author elandau
  */
 public class AmazonSqsClient {
-    public static final int DEFAULT_READ_TIMEOUT        = 10;
-    public static final int DEFAULT_WAIT_TIMEOUT        = 10;
-    public static final int DEFAULT_CONNECT_TIMEOUT     = 10;
-    public static final int DEFAULT_MAX_RETRIES         = 10;
-    public static final int DEFAULT_MAX_CONNECTIONS     = 10;
+    public static final int DEFAULT_READ_TIMEOUT        = (int)TimeUnit.SECONDS.toMillis(10);
+    public static final int DEFAULT_WAIT_TIMEOUT        = (int)TimeUnit.SECONDS.toMillis(10);
+    public static final int DEFAULT_CONNECT_TIMEOUT     = (int)TimeUnit.SECONDS.toMillis(10);
+    public static final int DEFAULT_MAX_RETRIES         = (int)TimeUnit.SECONDS.toMillis(10);
+    public static final int DEFAULT_MAX_CONNECTIONS     = (int)TimeUnit.SECONDS.toMillis(10);
     public static final String DEFAULT_REGION           = "us-east-1";
     
     public static class Builder {
@@ -125,8 +126,8 @@ public class AmazonSqsClient {
         client.setEndpoint("sqs." + builder.region + ".amazonaws.com");
         
         // Determine the queue URL
-        GetQueueUrlRequest request = new GetQueueUrlRequest();
-        QueueName queueName = new QueueName(builder.queueName);
+        GetQueueUrlRequest request   = new GetQueueUrlRequest();
+        QueueName          queueName = new QueueName(builder.queueName);
         
         if (!queueName.isFullQualifiedName()) {
             // List all queue names and find the one which has a full url ending with the queue name
@@ -304,8 +305,17 @@ public class AmazonSqsClient {
         return queueName;
     }
 
-    public SendMessageBatchResult sendMessageBatch(SendMessageBatchRequest request) {
+    public SendMessageBatchResult sendMessageBatch(Collection<SendMessageBatchRequestEntry> entries) {
+        SendMessageBatchRequest request = new SendMessageBatchRequest();
+        request.withEntries(entries);
         request.withQueueUrl(queueUrl);
         return client.sendMessageBatch(request);
+    }
+    
+    public DeleteMessageBatchResult deleteMessageBatch(Collection<DeleteMessageBatchRequestEntry> entries) {
+        DeleteMessageBatchRequest request = new DeleteMessageBatchRequest();
+        request.withQueueUrl(queueUrl);
+        request.withEntries(entries);
+        return client.deleteMessageBatch(request);
     }
 }

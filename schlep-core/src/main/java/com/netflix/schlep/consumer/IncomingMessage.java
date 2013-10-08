@@ -20,16 +20,6 @@ public interface IncomingMessage {
     public <T> T getContents(Class<T> clazz);
     
     /**
-     * Acknowledge processing of the message
-     */
-    public void ack();
-    
-    /**
-     * Acknowledge refusal to process the message
-     */
-    public void nak();
-
-    /**
      * Delay sending the ack or 'renew lease' to prevent timeout for messages with 
      * long processing time
      * @param duration

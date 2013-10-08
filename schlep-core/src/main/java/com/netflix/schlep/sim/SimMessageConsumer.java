@@ -77,17 +77,6 @@ public class SimMessageConsumer extends PollingMessageConsumer {
             
             messages.add(new AbstractIncomingMessage<String>(getId() + "-" + count) {
                 @Override
-                public void ack() {
-                    ackCounter.incrementAndGet();
-                    LOG.info("Ack: " + getContents(String.class) + " busy=" + (counter.get() - ackCounter.get()));
-                }
-                @Override
-                public void nak() {
-                    ackCounter.incrementAndGet();
-                    LOG.info("Nak: " + getContents(String.class));
-                }
-                
-                @Override
                 public <T> T getContents(Class<T> clazz) {
                     Preconditions.checkArgument(clazz.equals(String.class), "Only string type allowed");
                     return (T) entity;

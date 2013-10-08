@@ -45,16 +45,6 @@ public class OneMessageConsumer implements MessageConsumer {
                     throw new RuntimeException("Only String messages allowed here");
                 return (T)"Message";
             }
-
-            @Override
-            public void ack() {
-                ackMessageCount.incrementAndGet();
-            }
-
-            @Override
-            public void nak() {
-                nakMessageCount.incrementAndGet();
-            }
         });
     }
     

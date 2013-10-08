@@ -27,11 +27,6 @@ public abstract class SqsIncomingMessage implements IncomingMessage {
         return sw.elapsed(units);
     }
     
-    @Override
-    public <T> T getContents(Class<T> clazz) {
-        return null;
-    }
-    
     public SqsMessage getMessage() {
         return message;
     }

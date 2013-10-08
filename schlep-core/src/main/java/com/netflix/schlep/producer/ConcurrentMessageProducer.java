@@ -27,7 +27,7 @@ public abstract class ConcurrentMessageProducer implements MessageProducer {
     // Defaults
     private static final int DEFAULT_THREAD_COUNT     = 1;
     private static final int DEFAULT_BATCH_SIZE       = 10;
-    private static final int DEFAULT_BUFFER_DELAY     = 3000;
+    private static final int DEFAULT_BUFFER_DELAY     = 1000;
     
     // Configuration
     private final String id;
@@ -89,6 +89,8 @@ public abstract class ConcurrentMessageProducer implements MessageProducer {
         }
     }
     
+    private final AtomicLong    sendAttempt = new AtomicLong();
+
     protected ConcurrentMessageProducer(Builder<?> init) {
         this.batchSize   = init.batchSize;
         this.threadCount = init.threadCount;
@@ -120,7 +122,8 @@ public abstract class ConcurrentMessageProducer implements MessageProducer {
             .subscribe(new Action1<List<ObservableCompletion>>() {
                 @Override
                 public void call(List<ObservableCompletion> messages) {
-                    sendMessages(messages);
+                    if (messages.size() > 0) 
+                        sendMessages(messages);
                 }
             });
     }
@@ -163,6 +166,7 @@ public abstract class ConcurrentMessageProducer implements MessageProducer {
      */
     @Override
     public void send(OutgoingMessage message, Observer<Completion<OutgoingMessage>> observer) {
+        sendAttempt.incrementAndGet();
         subject.onNext(new ObservableCompletion(message, observer));
     }
 
@@ -174,6 +178,7 @@ public abstract class ConcurrentMessageProducer implements MessageProducer {
      */
     @Override
     public Observable<Completion<OutgoingMessage>> send(final OutgoingMessage message) {
+        sendAttempt.incrementAndGet();
         return Observable.create(new OnSubscribeFunc<Completion<OutgoingMessage>>() {
             @Override
             public Subscription onSubscribe(Observer<? super Completion<OutgoingMessage>> observer) {

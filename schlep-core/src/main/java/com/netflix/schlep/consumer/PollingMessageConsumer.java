@@ -39,7 +39,7 @@ public abstract class PollingMessageConsumer implements MessageConsumer {
     
     // Defaults
     private static final int DEFAULT_THREAD_COUNT     = 1;
-    private static final int DEFAULT_THROTTLE_MSEC    = 1;
+    private static final int DEFAULT_THROTTLE_MSEC    = 1000;
     private static final int DEFAULT_BATCH_SIZE       = 10;
     private static final int DEFAULT_ACK_BATCH_MSEC   = 1000;
     private static final int DEFAULT_MAX_BACKLOG      = 100;
@@ -198,52 +198,60 @@ public abstract class PollingMessageConsumer implements MessageConsumer {
             .buffer(ackMsec, TimeUnit.MILLISECONDS, batchSize)
             .subscribe(new Action1<List<Completion<IncomingMessage>>>() {
                 @Override
-                public void call(final List<Completion<IncomingMessage>> act) {
-                    if (!act.isEmpty()) {
-                        // TODO: Can we use subscribeOn or observeOn instead?
-                        executor.submit(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    sendAckBatch(act);
-                                } catch (ConsumerException e) {
-                                    LOG.error("Error acking messages", e);
-                                    // TODO: implement retry logic
+                public void call(final List<Completion<IncomingMessage>> completions) {
+                    if (!completions.isEmpty()) {
+                        try {
+                            // TODO: Can we use subscribeOn or observeOn instead?
+                            executor.submit(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        sendAckBatch(completions);
+                                        busyCount.addAndGet(-completions.size());
+                                        messagesAcked.incrementAndGet();
+                                    } catch (ConsumerException e) {
+                                        LOG.error("Error acking messages", e);
+                                        // TODO: implement retry logic
+                                    }
                                 }
-                            }
-                        });
-                        
-                        busyCount.addAndGet(-act.size());
-                        messagesAcked.incrementAndGet();
+                            });
+                        }
+                        catch (Exception e) {
+                            LOG.error("Error queueing ack", e);
+                        }
                     }
                 }
             });
         
         for (int i = 0; i < threadCount; i++) {
-            executor.scheduleAtFixedRate(new Runnable() {
+            executor.submit(new Runnable() {
                 @Override
                 public void run() {
-                    if (paused.get() || busyCount.get() > maxBacklog) {
-                        return;
-                    }
-                    
                     try {
-                        List<IncomingMessage> messages = readBatch(batchSize);
-                        for (IncomingMessage message : messages) {
-                            try {
-                                subject.onNext(message);
-                            }
-                            catch (Exception e) {
-                                LOG.error("Failed to process message", e);
+                        if (paused.get() || busyCount.get() > maxBacklog) {
+                            return;
+                        }
+                        
+                        try {
+                            List<IncomingMessage> messages = readBatch(batchSize);
+                            for (IncomingMessage message : messages) {
+                                try {
+                                    subject.onNext(message);
+                                }
+                                catch (Exception e) {
+                                    LOG.error("Failed to process message", e);
+                                }
                             }
                         }
+                        catch (Exception e) {
+                            LOG.error("Error executing consumer", e);
+                        }
                     }
-                    catch (Exception e) {
-                        LOG.error("Error executing consumer", e);
+                    finally {
+                        executor.schedule(this, throttleMsec, TimeUnit.MILLISECONDS);
                     }
-                    
                 }
-            }, 0, this.throttleMsec, TimeUnit.MILLISECONDS);
+            });
         }
     }
 

@@ -1,33 +1,32 @@
 package com.netflix.schlep.sqs;
 
+import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.auth.AWSCredentials;
-import com.google.common.base.Function;
+import com.amazonaws.services.sqs.model.BatchResultErrorEntry;
+import com.amazonaws.services.sqs.model.DeleteMessageBatchRequestEntry;
+import com.amazonaws.services.sqs.model.DeleteMessageBatchResult;
 import com.google.common.collect.Lists;
 import com.netflix.schlep.Completion;
 import com.netflix.schlep.consumer.IncomingMessage;
 import com.netflix.schlep.consumer.PollingMessageConsumer;
 import com.netflix.schlep.exception.ConsumerException;
 import com.netflix.schlep.mapper.Serializer;
-import com.netflix.schlep.sqs.transform.FromBase64Transform;
 import com.netflix.schlep.util.UnstoppableStopwatch;
 
 class SqsMessageConsumer extends PollingMessageConsumer {
     private static final Logger LOG = LoggerFactory.getLogger(SqsMessageConsumer.class);
     
-    public static final Function<String, String> DEFAULT_TRANSFORM = new FromBase64Transform();
-    public static final long   DEFAULT_VISIBILITY_TIMEOUT = TimeUnit.MINUTES.toSeconds(5);
-    
-    private final Function<String, String> transform;
-    private final Serializer               serializer;
-    private final long                     visibilityTimeout;
-    private final AmazonSqsClient          client;
+    public static final long        DEFAULT_VISIBILITY_TIMEOUT = TimeUnit.MINUTES.toSeconds(5);
+    public static final Serializer  DEFAULT_SERIALIZER         = new Base64Serializer();
     
     /**
      * Builder
@@ -35,18 +34,12 @@ class SqsMessageConsumer extends PollingMessageConsumer {
      * @param <T>
      */
     public static abstract class Builder<T extends Builder<T>> extends PollingMessageConsumer.Builder<T> {
-        private Function<String, String> transform         = DEFAULT_TRANSFORM;
-        private long            visibilityTimeout = DEFAULT_VISIBILITY_TIMEOUT;
-        private Serializer      serializer;
+        private long            visibilityTimeout     = DEFAULT_VISIBILITY_TIMEOUT;
+        private Serializer      serializer            = DEFAULT_SERIALIZER;
         private AmazonSqsClient.Builder clientBuilder = AmazonSqsClient.builder();
         
         public T withCredentials(AWSCredentials credentials) {
             this.clientBuilder.withCredentials(credentials);
-            return self();
-        }
-        
-        public T withTransform(Function<String, String> transform) {
-            this.transform = transform;
             return self();
         }
         
@@ -96,7 +89,7 @@ class SqsMessageConsumer extends PollingMessageConsumer {
 
         @Override
         public String toString() {
-            return "Builder [transform=" + transform + ", visibilityTimeout="
+            return "Builder [visibilityTimeout="
                     + visibilityTimeout + ", serializer=" + serializer
                     + ", clientBuilder=" + clientBuilder + "]";
         }
@@ -119,10 +112,17 @@ class SqsMessageConsumer extends PollingMessageConsumer {
         return new BuilderWrapper();
     }
     
+    private final Serializer               serializer;
+    private final long                     visibilityTimeout;
+    private final AmazonSqsClient          client;
+
+    private final AtomicLong    ackInvalid = new AtomicLong(0);
+    private final AtomicLong    ackFailure = new AtomicLong(0);
+    private final AtomicLong    ackSuccess = new AtomicLong(0);
+    
     protected SqsMessageConsumer(Builder<?> init) throws Exception {
         super(init);
         
-        this.transform         = init.transform;
         this.visibilityTimeout = init.visibilityTimeout;
         this.serializer        = init.serializer;
         this.client            = init.clientBuilder.build();
@@ -146,14 +146,17 @@ class SqsMessageConsumer extends PollingMessageConsumer {
             
             // Transform to internal response
             List<IncomingMessage> messages = Lists.newArrayList();
-            for (SqsMessage message : result) {
+            for (final SqsMessage message : result) {
                 messages.add(new SqsIncomingMessage(message, sw, visibilityTimeout) {
                     @Override
-                    public void ack() {
-                    }
-
-                    @Override
-                    public void nak() {
+                    public <T> T getContents(Class<T> clazz) {
+                        ByteArrayInputStream bais = new ByteArrayInputStream(message.getMessage().getBody().getBytes()); 
+                        try {
+                            return (T)serializer.deserialize(bais, clazz);
+                        } catch (Exception e) {
+                            LOG.error("Failed to deserialize message", e);
+                            throw new RuntimeException("Bad data format", e);
+                        }
                     }
                 });
             }
@@ -165,8 +168,52 @@ class SqsMessageConsumer extends PollingMessageConsumer {
     }
 
     @Override
-    protected void sendAckBatch(List<Completion<IncomingMessage>> act) {
-        // TODO Auto-generated method stub
-        
+    protected void sendAckBatch(List<Completion<IncomingMessage>> messages) {
+        List<Completion<IncomingMessage>> toAck = Lists.newArrayList(messages);
+        while (!toAck.isEmpty()) {
+            try {
+                // Construct a delete message request and assign each message an ID equivalent to it's position
+                // in the original list for fast lookup on the response
+                final List<DeleteMessageBatchRequestEntry> batchReqEntries = new ArrayList<DeleteMessageBatchRequestEntry>(messages.size());
+                int id = 0;
+                for (Completion<IncomingMessage> message : messages) {
+                    SqsIncomingMessage sqsMessage = (SqsIncomingMessage)(message.getValue());
+                    batchReqEntries.add(new DeleteMessageBatchRequestEntry(
+                            Integer.toString(id), 
+                            sqsMessage.getMessage().getMessage().getReceiptHandle()));
+                    ++id;
+                }
+                
+                // Send the request
+                DeleteMessageBatchResult result = client.deleteMessageBatch(batchReqEntries);
+                if (result.getSuccessful() != null) {
+                    ackSuccess.addAndGet(result.getSuccessful().size());
+                }
+
+                // Handle failed sends
+                if (result.getFailed() != null && !result.getFailed().isEmpty()) {
+                    toAck = Lists.newArrayListWithCapacity(result.getFailed().size());
+                    for (BatchResultErrorEntry entry : result.getFailed()) {
+                        // There cannot be resent and are probably the result of something like message exceeding
+                        // the max size or certificate errors
+                        if (entry.isSenderFault()) {
+                            ackInvalid.incrementAndGet();
+                            // TODO: messages.get(Integer.parseInt(entry.getId())).setException(new ProducerException(entry.getCode()));
+                        }
+                        // These messages can probably be resent and may be due to issues on the amazon side, 
+                        // such as service timeout
+                        else {
+                            ackFailure.incrementAndGet();
+                            toAck.add(messages.get(Integer.parseInt(entry.getId())));
+                        }
+                    }
+                }
+                else {
+                    return;
+                }
+            } catch (Exception e) {
+                LOG.error("Error acking messages " + getId(), e);
+            }
+        }
     }
 }
