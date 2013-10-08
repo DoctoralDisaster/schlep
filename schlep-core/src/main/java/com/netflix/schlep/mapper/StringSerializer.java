@@ -1,4 +1,4 @@
-package com.netflix.schlep.sqs.serializer;
+package com.netflix.schlep.mapper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -7,17 +7,30 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 
 import com.google.common.base.Charsets;
-import com.netflix.schlep.mapper.Serializer;
+import com.netflix.schlep.mapper.jackson.JacksonSerializer;
 
-public class DefaultSerializer implements Serializer {
+public class StringSerializer implements Serializer {
+    private final Serializer next;
+    
+    public StringSerializer() {
+        this(JacksonSerializer.get());
+    }
+    
+    public StringSerializer(Serializer next) {
+        this.next = next;
+    }
+    
     @Override
     public <T> void serialize(T entity, OutputStream os) throws Exception {
         if (entity.getClass().equals(String.class)) {
             byte[] bytes = ((String)entity).getBytes(Charsets.UTF_8);
             os.write(bytes);
         }
-        else {
+        else if (next == null) {
             throw new RuntimeException("Unsupported entity type: " + entity.getClass().getCanonicalName());
+        }
+        else {
+            next.serialize(entity, os);
         }
     }
 
@@ -49,8 +62,11 @@ public class DefaultSerializer implements Serializer {
      
             return (T) sb.toString();
         }
-        else {
+        else if (next == null) {
             throw new RuntimeException("Unsupported entity type: " + clazz.getCanonicalName());
+        }
+        else {
+            return next.deserialize(is, clazz);
         }
     }
 }

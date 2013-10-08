@@ -17,11 +17,11 @@ import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
 import com.google.common.collect.Lists;
 import com.netflix.schlep.exception.ProducerException;
+import com.netflix.schlep.mapper.Base64Serializer;
 import com.netflix.schlep.mapper.Serializer;
 import com.netflix.schlep.producer.ConcurrentMessageProducer;
 import com.netflix.schlep.sqs.AmazonSqsClient;
 import com.netflix.schlep.sqs.AmazonSqsClient.Builder;
-import com.netflix.schlep.sqs.serializer.Base64Serializer;
 
 /**
  * MessageProducer that sends messages to an SQS queue.

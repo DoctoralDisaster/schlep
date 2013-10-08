@@ -1,4 +1,4 @@
-package com.netflix.schlep.sqs.serializer;
+package com.netflix.schlep.mapper;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -11,7 +11,6 @@ import java.io.OutputStream;
 import org.apache.commons.codec.binary.Base64;
 
 import com.google.common.base.Charsets;
-import com.netflix.schlep.mapper.Serializer;
 
 /**
  * @author elandau
@@ -19,12 +18,12 @@ import com.netflix.schlep.mapper.Serializer;
 public class Base64Serializer implements Serializer {
     private final Serializer component;
     
-    public Base64Serializer(Serializer component) {
-        this.component = component;
+    public Base64Serializer() {
+        this(new StringSerializer());
     }
     
-    public Base64Serializer() {
-        this(new DefaultSerializer());
+    public Base64Serializer(Serializer component) {
+        this.component = component;
     }
     
     @Override
