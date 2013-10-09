@@ -89,23 +89,23 @@ project(':schlep-sqs') {
      }
 }
 
-project(':schlep-kafka') {
-    apply plugin: 'scala'
-    dependencies {
-        compile  project(':schlep-core')
-        compile('org.apache.kafka:kafka_2.8.0:0.8.0-beta1') {
-            exclude module: 'jms'
-            exclude module: 'jmxtools'
-            exclude module: 'jmxri'
-        }
-        scalaTools 'org.scala-lang:scala-compiler:2.8.0'
-        scalaTools 'org.scala-lang:scala-library:2.8.0'
-
-        testCompile 'junit:junit:4.11'
-        testCompile 'org.scalatest:scalatest:1.2'
-        testCompile 'commons-io:commons-io:2.4'
-    }
-}
+//project(':schlep-kafka') {
+//    apply plugin: 'scala'
+//    dependencies {
+//        compile  project(':schlep-core')
+//        compile('org.apache.kafka:kafka_2.8.0:0.8.0-beta1') {
+//            exclude module: 'jms'
+//            exclude module: 'jmxtools'
+//            exclude module: 'jmxri'
+//        }
+//        scalaTools 'org.scala-lang:scala-compiler:2.8.0'
+//        scalaTools 'org.scala-lang:scala-library:2.8.0'
+//
+//        testCompile 'junit:junit:4.11'
+//        testCompile 'org.scalatest:scalatest:1.2'
+//        testCompile 'commons-io:commons-io:2.4'
+//    }
+//}
 
 //project(':schlep-astyanax-pri-queue') {
 //    apply plugin: 'java'

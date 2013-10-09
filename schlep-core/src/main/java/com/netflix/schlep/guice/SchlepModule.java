@@ -1,12 +1,18 @@
 package com.netflix.schlep.guice;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.multibindings.MapBinder;
+import com.netflix.schlep.consumer.MessageConsumerFactory;
 import com.netflix.schlep.consumer.MessageConsumerManager;
+import com.netflix.schlep.producer.MessageProducerFactory;
 import com.netflix.schlep.producer.MessageProducerManager;
 
 public class SchlepModule extends AbstractModule {
     @Override
     protected void configure() {
+        MapBinder.newMapBinder(binder(), String.class, MessageConsumerFactory.class);
+        MapBinder.newMapBinder(binder(), String.class, MessageProducerFactory.class);
+        
         bind(MessageConsumerManager.class);
         bind(MessageProducerManager.class);
 

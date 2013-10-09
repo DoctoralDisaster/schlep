@@ -119,6 +119,6 @@ public class PropertiesConfigTest {
                 
         injector.getInstance(MyService.class);
 
-        Thread.sleep(TimeUnit.MINUTES.toMillis(1));
+        Thread.sleep(TimeUnit.SECONDS.toMillis(10));
     }
 }
