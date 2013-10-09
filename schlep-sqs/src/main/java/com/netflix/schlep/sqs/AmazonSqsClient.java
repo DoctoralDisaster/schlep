@@ -208,50 +208,7 @@ public class AmazonSqsClient {
         }
         return response;
     }
-    
-    public List<SqsMessage> deleteMessages(List<SqsMessage> messages) {
-        // Construct a send message request and assign each message an ID equivalent to it's position
-        // in the original list for fast lookup on the response
-        final List<DeleteMessageBatchRequestEntry> batchReqEntries = new ArrayList<DeleteMessageBatchRequestEntry>(messages.size());
-        int id = 0;
-        for (SqsMessage message : messages) {
-            batchReqEntries.add(new DeleteMessageBatchRequestEntry(
-                    Integer.toString(id), 
-                    message.getMessage().getReceiptHandle()));
-            ++id;
-        }
-        
-        DeleteMessageBatchRequest request = new DeleteMessageBatchRequest()
-            .withQueueUrl(queueUrl)
-            .withEntries(batchReqEntries);
-    
-        // Send the request
-        DeleteMessageBatchResult result = null;
-        result = client.deleteMessageBatch(request);
-
-        // Handle failed sends
-        if (result.getFailed() != null && !result.getFailed().isEmpty()) {
-            List<SqsMessage> retryableMessages = Lists.newArrayListWithCapacity(result.getFailed().size());
-            for (BatchResultErrorEntry entry : result.getFailed()) {
-                // There cannot be resent and are probably the result of something like message exceeding
-                // the max size or certificate errors
-                if (entry.isSenderFault()) {
-                    // TODO: messages.get(Integer.parseInt(entry.getId())).setException(new ProducerException(entry.getCode()));
-                }
-                // These messages can probably be resent and may be due to issues on the amazon side, 
-                // such as service timeout
-                else {
-                    retryableMessages.add(messages.get(Integer.parseInt(entry.getId())));
-                }
-            }
-            return retryableMessages;
-        }
-        // All sent OK
-        else {
-            return ImmutableList.of();
-        }
-    }
-    
+   
     public List<SqsMessage> renewMessages(List<SqsMessage> messages) {
         // Construct a send message request and assign each message an ID equivalent to it's position
         // in the original list for fast lookup on the response

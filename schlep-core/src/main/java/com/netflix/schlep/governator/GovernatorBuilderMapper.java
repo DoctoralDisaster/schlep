@@ -1,6 +1,7 @@
 package com.netflix.schlep.governator;
 
 import java.lang.reflect.Method;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -9,6 +10,10 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import com.google.inject.Binding;
+import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.Provider;
 import com.netflix.governator.configuration.ConfigurationKey;
 import com.netflix.governator.configuration.ConfigurationProvider;
 import com.netflix.governator.configuration.KeyParser;
@@ -16,7 +21,8 @@ import com.netflix.schlep.serializer.Mapper;
 
 /**
  * Quick and dirty implementation that looks at all of the withXXX methods of a
- * builder and populates with a property.
+ * builder and populates with a property.  Also supports injecting non-primitive
+ * fields.
  * 
  * @author elandau
  *
@@ -26,10 +32,15 @@ public class GovernatorBuilderMapper implements Mapper {
     
     private final ConfigurationProvider configurationProvider;
     private final String                prefix;
+    private final Injector              injector;
+    private final Map<Key<?>, Binding<?>> bindings;
     
-    public GovernatorBuilderMapper(ConfigurationProvider configurationProvider, String prefix) {
+    public GovernatorBuilderMapper(Injector injector, ConfigurationProvider configurationProvider, String prefix) {
         this.configurationProvider = configurationProvider;
         this.prefix                = prefix;
+        this.injector              = injector;
+        
+        this.bindings = injector.getAllBindings();
     }
     
     @Override
@@ -95,10 +106,21 @@ public class GovernatorBuilderMapper implements Mapper {
         {
             return configurationProvider.getDoubleSupplier(key, null);
         }
-        else
-        {
-            LOG.error("Method argument type not supported: " + type + " (" + type + ")");
-            return Suppliers.ofInstance(null);
+        else if (!type.isPrimitive()) {
+            if (bindings.containsKey(Key.get(type))) {
+                final Provider<?> provider = injector.getProvider(type);
+                if (provider != null) {
+                    return new Supplier() {
+                        @Override
+                        public Object get() {
+                            return provider.get();
+                        }
+                    };
+                }
+            }
         }
+        
+        LOG.error("Method argument type not supported: " + type + " (" + type + ")");
+        return Suppliers.ofInstance(null);
     }
 }

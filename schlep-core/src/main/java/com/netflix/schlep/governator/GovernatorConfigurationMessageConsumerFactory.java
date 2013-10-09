@@ -3,6 +3,7 @@ package com.netflix.schlep.governator;
 import java.util.Map;
 
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.netflix.governator.configuration.ConfigurationKey;
 import com.netflix.governator.configuration.ConfigurationProvider;
@@ -26,14 +27,17 @@ public class GovernatorConfigurationMessageConsumerFactory implements DefaultMes
     
     private final ConfigurationProvider configProvider;
     private final Map<String, MessageConsumerFactory> factories;
+    private final Injector  injector;
     
     @Inject
     public GovernatorConfigurationMessageConsumerFactory(
+            Injector                            injector,
             ConfigurationProvider               configProvider, 
             Map<String, MessageConsumerFactory> factories) {
         
         this.configProvider = configProvider;
         this.factories      = factories;
+        this.injector       = injector;
     }
     
     @Override
@@ -55,7 +59,7 @@ public class GovernatorConfigurationMessageConsumerFactory implements DefaultMes
         }
         
         return provider.createConsumer(id, 
-                new GovernatorBuilderMapper(configProvider, String.format(CONSUMER_PROPERTIES_PREFIX, id)));
+                new GovernatorBuilderMapper(injector, configProvider, String.format(CONSUMER_PROPERTIES_PREFIX, id)));
     }
 
 }

@@ -3,9 +3,7 @@ package com.netflix.schlep.sqs.consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.auth.AWSCredentials;
 import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.netflix.schlep.consumer.MessageConsumer;
 import com.netflix.schlep.consumer.MessageConsumerFactory;
 import com.netflix.schlep.exception.ConsumerException;
@@ -19,13 +17,8 @@ import com.netflix.schlep.serializer.Mapper;
 public class SqsMessageConsumerFactory implements MessageConsumerFactory {
     private static final Logger LOG = LoggerFactory.getLogger(SqsMessageConsumerFactory.class);
     
-    private Provider<AWSCredentials> credentialProvider;
-    
     @Inject
-    public SqsMessageConsumerFactory(
-            Provider<AWSCredentials> credentialProvider
-        ) {
-        this.credentialProvider = credentialProvider;
+    public SqsMessageConsumerFactory() {
     }
 
     @Override
@@ -34,8 +27,6 @@ public class SqsMessageConsumerFactory implements MessageConsumerFactory {
             SqsMessageConsumer.Builder<?> builder = SqsMessageConsumer.builder();
             
             builder.withId(id);
-            builder.withCredentials(credentialProvider.get());
-            
             LOG.info("Building " + builder.toString());
             
             // builder.withRegion();

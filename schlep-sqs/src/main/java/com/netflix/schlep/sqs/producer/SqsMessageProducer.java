@@ -21,7 +21,6 @@ import com.netflix.schlep.mapper.Base64Serializer;
 import com.netflix.schlep.mapper.Serializer;
 import com.netflix.schlep.producer.ConcurrentMessageProducer;
 import com.netflix.schlep.sqs.AmazonSqsClient;
-import com.netflix.schlep.sqs.AmazonSqsClient.Builder;
 
 /**
  * MessageProducer that sends messages to an SQS queue.
@@ -47,6 +46,11 @@ public class SqsMessageProducer extends ConcurrentMessageProducer {
         
         public T withCredentials(AWSCredentials credentials) {
             this.clientBuilder.withCredentials(credentials);
+            return self();
+        }
+        
+        public T withSerializer(String serializer) throws Exception {
+            this.serializer = (Serializer) Class.forName(serializer).newInstance();
             return self();
         }
         

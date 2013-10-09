@@ -23,7 +23,6 @@ import com.netflix.schlep.mapper.Base64Serializer;
 import com.netflix.schlep.mapper.Serializer;
 import com.netflix.schlep.sqs.AmazonSqsClient;
 import com.netflix.schlep.sqs.SqsMessage;
-import com.netflix.schlep.sqs.AmazonSqsClient.Builder;
 import com.netflix.schlep.util.UnstoppableStopwatch;
 
 class SqsMessageConsumer extends PollingMessageConsumer {
